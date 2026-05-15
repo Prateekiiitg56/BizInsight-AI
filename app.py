@@ -84,6 +84,7 @@ with tabs[2]:
 # ================= LOAD STORED DATA =================
 
 data = fetch_feedback()
+df = None
 
 if data:
     df = pd.DataFrame(data, columns=["review", "sentiment", "date"])
@@ -98,11 +99,12 @@ if data:
     X = vectorizer.fit_transform(df["review"])
     keywords = vectorizer.get_feature_names_out()
 
-    # ================= DASHBOARD =================
+# ================= DASHBOARD =================
 
-    with tabs[0]:
-        st.subheader("📈 Business Health Overview")
-
+with tabs[0]:
+    st.subheader("📈 Business Health Overview")
+    
+    if df is not None:
         c1, c2, c3 = st.columns(3)
         c1.metric("Total Reviews", len(df))
         c2.metric("Positive", positive)
@@ -125,31 +127,35 @@ if data:
 
         st.subheader("Top Customer Issues")
         st.write(list(keywords))
+    else:
+        st.info("Upload feedback to start building insights on your Dashboard.")
 
 
-    # ================= AI ASSISTANT =================
+# ================= AI ASSISTANT =================
 
-    with tabs[1]:
-        st.subheader("🤖 AI Business Consultant")
-        st.write("Ask questions about customer experience and improvement strategy.")
-
+with tabs[1]:
+    st.subheader("🤖 AI Business Consultant")
+    st.write("Ask questions about customer experience and improvement strategy.")
+    
+    if df is not None:
         user_q = st.text_input("Type your business question here")
 
         if user_q:
             with st.spinner("Analyzing feedback..."):
                 st.success(ask_ai(user_q, df["review"].tolist()))
+    else:
+        st.info("Upload feedback first to consult with the AI Assistant.")
 
 
-    # ================= CONTROLS =================
+# ================= CONTROLS =================
 
-    with tabs[3]:
-        st.subheader("⚙ System Controls")
-
+with tabs[3]:
+    st.subheader("⚙ System Controls")
+    
+    if df is not None:
+        st.caption("⚠️ Warning: Clearing feedback cannot be undone.")
         if st.button("🗑 Clear all stored feedback"):
             clear_data()
             st.success("All data removed successfully.")
-
-        st.warning("This action cannot be undone.")
-
-else:
-    st.info("Upload feedback to start building insights.")
+    else:
+        st.info("No data available to manage.")
