@@ -15,11 +15,13 @@ conn.commit()
 
 
 def insert_feedback(review, sentiment):
-    cursor.execute(
-        "INSERT INTO feedback (review, sentiment) VALUES (?, ?)",
-        (review, sentiment)
-    )
-    conn.commit()
+    cursor.execute("SELECT 1 FROM feedback WHERE review = ?", (review,))
+    if cursor.fetchone() is None:
+        cursor.execute(
+            "INSERT INTO feedback (review, sentiment) VALUES (?, ?)",
+            (review, sentiment)
+        )
+        conn.commit()
 
 
 def fetch_feedback():
