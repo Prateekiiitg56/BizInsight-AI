@@ -69,8 +69,16 @@ with tabs[2]:
 
     uploaded_file = st.file_uploader("Upload CSV with review column", type="csv")
 
+    MAX_ROWS = 5000
+
     if uploaded_file:
         df = pd.read_csv(uploaded_file)
+
+        row_count = len(df)
+
+        if row_count > MAX_ROWS:
+            st.error(f"Uploaded CSV contains {row_count} rows. Maximum allowed is {MAX_ROWS}.")
+            st.stop()
         st.dataframe(df, use_container_width=True)
 
         df["sentiment"] = df["review"].apply(get_sentiment)
