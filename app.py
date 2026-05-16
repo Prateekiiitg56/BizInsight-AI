@@ -126,6 +126,17 @@ if data:
         st.subheader("Top Customer Issues")
         st.write(list(keywords))
 
+        st.markdown("---")
+        st.subheader("📥 Export Data")
+        
+        csv_data = df.to_csv(index=False).encode("utf-8")
+        st.download_button(
+            label="⬇️ Download Feedback as CSV",
+            data=csv_data,
+            file_name="bizinsight_feedback.csv",
+            mime="text/csv"
+)
+
 
     # ================= AI ASSISTANT =================
 
