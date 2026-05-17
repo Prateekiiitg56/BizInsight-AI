@@ -90,21 +90,30 @@ with tabs[2]:
 
 
 # ================= LOAD STORED DATA =================
+@st.cache_data
+def load_feedback():
+    data = fetch_feedback()
 
-data = fetch_feedback()
+    if data:
+        df = pd.DataFrame(data, columns=["review", "sentiment", "date"])
+        df["date"] = pd.to_datetime(df["date"])
 
-if data:
-    df = pd.DataFrame(data, columns=["review", "sentiment", "date"])
-    df["date"] = pd.to_datetime(df["date"])
+        positive = (df["sentiment"] > 0).sum()
+        negative = (df["sentiment"] < 0).sum()
 
-    positive = (df["sentiment"] > 0).sum()
-    negative = (df["sentiment"] < 0).sum()
+        trend = df.groupby(df["date"].dt.date)["sentiment"].mean()
 
-    trend = df.groupby(df["date"].dt.date)["sentiment"].mean()
+        vectorizer = CountVectorizer(stop_words="english", max_features=10)
+        X = vectorizer.fit_transform(df["review"])
+        keywords = vectorizer.get_feature_names_out()
 
-    vectorizer = CountVectorizer(stop_words="english", max_features=10)
-    X = vectorizer.fit_transform(df["review"])
-    keywords = vectorizer.get_feature_names_out()
+        return df, positive, negative, trend, keywords
+
+    return None, None, None, None, None
+
+
+df, positive, negative, trend, keywords = load_feedback()
+if df is not None:
 
     # ================= DASHBOARD =================
 
