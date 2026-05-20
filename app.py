@@ -23,9 +23,9 @@ client = None
 
 if api_key:
     client = OpenAI(
-        api_key=api_key,
-        base_url="https://openrouter.ai/api/v1"
-    )
+    api_key=api_key,
+    base_url="https://openrouter.ai/api/v1"
+)
 
 st.title("📊 BizInsight AI")
 st.caption("AI-powered customer intelligence platform for business growth")
@@ -112,7 +112,6 @@ if data:
         c3.metric("Negative", negative)
 
         st.markdown("---")
-
         # Create chart first
         fig, ax = plt.subplots(figsize=(4,4))
 
@@ -122,12 +121,10 @@ if data:
         )
 
         plt.tight_layout()
-
         with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tmpfile:
             chart_path = tmpfile.name
 
             fig.savefig(chart_path)
-
         if st.button("Generate PDF Report"):
 
             # THEN create PDF
@@ -137,13 +134,13 @@ if data:
             with open(pdf_path, "rb") as pdf_file:
 
                 st.download_button(
-                    label="Download Report",
-                    data=pdf_file,
-                    file_name="bizinsight_report.pdf",
-                    mime="application/pdf"
-                )
+                label="Download Report",
+                data=pdf_file,
+                file_name="bizinsight_report.pdf",
+                mime="application/pdf"
+            )
 
-        # Dashboard visuals
+            # Dashboard visuals
         col1, col2 = st.columns([2,1])
 
         with col1:
@@ -164,15 +161,13 @@ if data:
         st.subheader("🤖 AI Business Consultant")
         st.write("Ask questions about customer experience and improvement strategy.")
 
+        user_q = st.text_input("Type your business question here")
+
         if not api_key:
-            st.warning("Add OPENROUTER_API_KEY to enable AI features.")
-
-        else:
-            user_q = st.text_input("Type your business question here")
-
-            if user_q:
-                with st.spinner("Analyzing feedback..."):
-                    st.success(ask_ai(user_q, df["review"].tolist()))
+            st.warning("AI features require an API key. Please set OPENROUTER_API_KEY in your .env file.")
+        elif user_q:
+            with st.spinner("Analyzing feedback..."):
+                st.success(ask_ai(user_q, df["review"].tolist()))
 
 
     # ================= CONTROLS =================
