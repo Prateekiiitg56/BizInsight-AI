@@ -1,9 +1,12 @@
 import os
 import tempfile
+import logging
 from pdf_generator import create_pdf
 from dotenv import load_dotenv
 
 load_dotenv()
+
+logger = logging.getLogger(__name__)
 
 import streamlit as st
 st.set_page_config(page_title="BizInsight AI", layout="wide")
@@ -12,7 +15,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.feature_extraction.text import CountVectorizer
 from textblob import TextBlob
-from database import insert_feedback, fetch_feedback, clear_data
+from database import insert_feedback_bulk, fetch_feedback, clear_data
 from openai import OpenAI
 
 # ---------- Constants ----------
@@ -77,7 +80,8 @@ Question:
         )
         return response.choices[0].message.content
     except Exception as e:
-        return f"⚠️ AI request failed: {str(e)}. Please try again later."
+        logger.error(f"AI request failed: {e}")
+        return "⚠️ AI request failed. Please try again later."
 
 
 def validate_csv(df):
@@ -144,14 +148,8 @@ with tabs[2]:
 
                     df["sentiment"] = df["review"].apply(get_sentiment)
 
-                    insert_count = 0
-                    skip_count = 0
-                    for _, row in df.iterrows():
-                        try:
-                            insert_feedback(row["review"], row["sentiment"])
-                            insert_count += 1
-                        except ValueError:
-                            skip_count += 1
+                    records = list(zip(df["review"].tolist(), df["sentiment"].tolist()))
+                    insert_count, skip_count = insert_feedback_bulk(records)
 
                     st.success(f"✅ {insert_count} reviews added successfully!")
                     if skip_count > 0:
@@ -195,8 +193,7 @@ if data:
 
         st.markdown("---")
 
-        # Create chart
-        chart_path = None
+        # Create chart (displayed in dashboard, saved to temp file only when PDF is requested)
         fig, ax = plt.subplots(figsize=(4, 4))
         ax.bar(
             ["Positive", "Negative"],
@@ -204,32 +201,29 @@ if data:
         )
         plt.tight_layout()
 
-        try:
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tmpfile:
-                chart_path = tmpfile.name
-                fig.savefig(chart_path)
-        except Exception as e:
-            st.warning(f"⚠️ Could not save chart image: {str(e)}")
-
         if st.button("Generate PDF Report"):
-            if chart_path:
-                pdf_path = None
-                try:
-                    pdf_path = create_pdf(len(df), positive, negative, chart_path)
+            chart_path = None
+            pdf_path = None
+            try:
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tmpfile:
+                    chart_path = tmpfile.name
+                    fig.savefig(chart_path)
 
-                    with open(pdf_path, "rb") as pdf_file:
-                        st.download_button(
-                            label="Download Report",
-                            data=pdf_file,
-                            file_name="bizinsight_report.pdf",
-                            mime="application/pdf"
-                        )
-                finally:
-                    # Cleanup temporary files after PDF generation
-                    cleanup_temp_file(chart_path)
-                    cleanup_temp_file(pdf_path)
-            else:
-                st.error("❌ Chart could not be generated. PDF report is unavailable.")
+                pdf_path = create_pdf(len(df), positive, negative, chart_path)
+
+                with open(pdf_path, "rb") as pdf_file:
+                    st.download_button(
+                        label="Download Report",
+                        data=pdf_file,
+                        file_name="bizinsight_report.pdf",
+                        mime="application/pdf"
+                    )
+            except Exception as e:
+                logger.error(f"PDF report generation failed: {e}")
+                st.error("❌ Failed to generate report. Please try again.")
+            finally:
+                cleanup_temp_file(chart_path)
+                cleanup_temp_file(pdf_path)
 
         # Dashboard visuals
         col1, col2 = st.columns([2, 1])

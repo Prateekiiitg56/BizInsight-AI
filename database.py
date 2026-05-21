@@ -74,6 +74,48 @@ def insert_feedback(review, sentiment):
         raise sqlite3.Error(f"Insert Error: {e}")
 
 
+def insert_feedback_bulk(records):
+    """Insert multiple feedback records efficiently using executemany.
+
+    Args:
+        records: List of (review, sentiment) tuples.
+
+    Returns:
+        tuple: (insert_count, skip_count) indicating how many were inserted vs skipped.
+    """
+    valid_records = []
+    skip_count = 0
+
+    for review, sentiment in records:
+        # Skip None / empty reviews
+        if review is None or str(review).strip() == "":
+            skip_count += 1
+            continue
+
+        # Sanitize NaN sentiment values
+        if sentiment is None or (isinstance(sentiment, float) and math.isnan(sentiment)):
+            sentiment = 0.0
+
+        valid_records.append((str(review).strip(), float(sentiment)))
+
+    if not valid_records:
+        return 0, skip_count
+
+    try:
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.executemany(
+                "INSERT INTO feedback (review, sentiment) VALUES (?, ?)",
+                valid_records
+            )
+            conn.commit()
+            return len(valid_records), skip_count
+
+    except sqlite3.Error as e:
+        logger.error(f"Bulk Insert Error: {e}")
+        raise sqlite3.Error(f"Bulk Insert Error: {e}")
+
+
 def fetch_feedback():
 
     try:
