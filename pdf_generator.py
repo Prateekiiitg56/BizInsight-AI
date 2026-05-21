@@ -3,7 +3,24 @@ import tempfile
 from fpdf import FPDF
 from datetime import datetime
 
+
 def create_pdf(total, positive, negative, chart_path):
+    """Generate a PDF report with business health overview.
+    
+    Args:
+        total: Total number of reviews
+        positive: Count of positive reviews
+        negative: Count of negative reviews
+        chart_path: Path to the chart image file
+        
+    Returns:
+        str: Path to the generated PDF file
+        
+    Raises:
+        ValueError: If input parameters are invalid
+    """
+    if total < 0 or positive < 0 or negative < 0:
+        raise ValueError("Review counts must be non-negative.")
 
     pdf = FPDF()
 
@@ -49,9 +66,10 @@ def create_pdf(total, positive, negative, chart_path):
 
     
 
-    if os.path.exists(chart_path):
+    if chart_path and os.path.exists(chart_path):
         pdf.ln(5)
         pdf.image(chart_path, x=45, w=100)
+
     #Insights
     pdf.ln(5)
 
@@ -114,6 +132,3 @@ def create_pdf(total, positive, negative, chart_path):
     pdf.output(pdf_path)
 
     return pdf_path
-
-    
-    

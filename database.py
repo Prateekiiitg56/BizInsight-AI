@@ -1,5 +1,6 @@
 import sqlite3
 import logging
+import math
 from contextlib import contextmanager
 
 DB_NAME = "bizinsight.db"
@@ -45,6 +46,10 @@ def insert_feedback(review, sentiment):
     if review is None or str(review).strip() == "":
         raise ValueError("Review cannot be empty.")
 
+    # Handle NaN sentiment values
+    if sentiment is None or (isinstance(sentiment, float) and math.isnan(sentiment)):
+        sentiment = 0.0
+
     try:
         with get_connection() as conn:
 
@@ -55,7 +60,7 @@ def insert_feedback(review, sentiment):
                 INSERT INTO feedback (review, sentiment)
                 VALUES (?, ?)
                 """,
-                (str(review), sentiment)
+                (str(review).strip(), float(sentiment))
             )
 
             conn.commit()
@@ -111,5 +116,6 @@ def clear_data():
         raise sqlite3.Error(f"Delete Error: {e}")
 
 
-if __name__ == "__main__":
-    initialize_database()
+# Auto-initialize database on module import to prevent
+# "no such table: feedback" errors (fixes issue #56)
+initialize_database()
