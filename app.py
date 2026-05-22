@@ -75,6 +75,9 @@ with tabs[2]:
         df = pd.read_csv(uploaded_file)
         st.dataframe(df, use_container_width=True)
 
+        df = df.dropna(subset=["review"])
+        df = df[df["review"].str.strip() != ""]
+
         df["sentiment"] = df["review"].apply(get_sentiment)
 
         for _, row in df.iterrows():
