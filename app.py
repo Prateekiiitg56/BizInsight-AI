@@ -75,6 +75,10 @@ with tabs[2]:
         df = pd.read_csv(uploaded_file)
         st.dataframe(df, use_container_width=True)
 
+        if "review" not in df.columns:
+            st.error("The uploaded CSV must contain a 'review' column.")
+            st.stop()
+
         df = df.dropna(subset=["review"])
         df = df[df["review"].str.strip() != ""]
 
