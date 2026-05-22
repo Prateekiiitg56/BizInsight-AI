@@ -46,9 +46,15 @@ def insert_feedback(review, sentiment):
     if review is None or str(review).strip() == "":
         raise ValueError("Review cannot be empty.")
 
-    # Handle NaN sentiment values
-    if sentiment is None or (isinstance(sentiment, float) and math.isnan(sentiment)):
+    # Handle None and normalize NaN sentiment values, including float-like types
+    if sentiment is None:
         sentiment = 0.0
+    else:
+        try:
+            normalized_sentiment = float(sentiment)
+            sentiment = 0.0 if math.isnan(normalized_sentiment) else normalized_sentiment
+        except (TypeError, ValueError):
+            pass
 
     try:
         with get_connection() as conn:
