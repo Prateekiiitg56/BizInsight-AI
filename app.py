@@ -30,6 +30,10 @@ if api_key:
 st.title("📊 BizInsight AI")
 st.caption("AI-powered customer intelligence platform for business growth")
 
+if "data_cleared" in st.session_state:
+    st.success("All data removed successfully.")
+    del st.session_state.data_cleared
+
 tabs = st.tabs(["📊 Dashboard", "🤖 AI Assistant", "📂 Data Upload", "⚙ Controls"])
 
 # ---------- Core Functions ----------
@@ -52,18 +56,18 @@ Analyze patterns, root problems and give improvement suggestions.
 Question:
 {question}
 """
-
-    response = client.chat.completions.create(
-        model="tngtech/deepseek-r1t2-chimera:free",
-        messages=[
-            {"role": "system", "content": "You provide business intelligence insights."},
-            {"role": "user", "content": prompt}
-        ],
-        temperature=0.4
-    )
-
-    return response.choices[0].message.content
-
+    try:
+        response = client.chat.completions.create(
+            model="tngtech/deepseek-r1t2-chimera:free",
+            messages=[
+                {"role": "system", "content": "You provide business intelligence insights."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.4
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        return f"⚠️ Error: Could not get a response from the AI. Please check your API key or try again later. (Details: {str(e)})"
 
 # ================= DATA UPLOAD =================
 
@@ -74,14 +78,28 @@ with tabs[2]:
 
     if uploaded_file:
         df = pd.read_csv(uploaded_file)
-        st.dataframe(df, use_container_width=True)
+        st.dataframe(df, width='stretch')
+        if "review" not in df.columns:
+            st.error("CSV must contain a 'review' column.")
+        else:
+            df = df.dropna(subset=["review"])
 
-        df["sentiment"] = df["review"].apply(get_sentiment)
+            df["review"] = df["review"].astype(str).str.strip()
+            df = df[df["review"] != ""]
 
-        for _, row in df.iterrows():
-            insert_feedback(row["review"], row["sentiment"])
+            if df.empty:
+                st.warning("No valid reviews found after cleaning. Nothing to process.")
+            else:
+                df["sentiment"] = df["review"].apply(get_sentiment)
 
-        st.success("Feedback successfully added!")
+                inserted_count = 0
+
+                
+                for _, row in df.iterrows():
+                    insert_feedback(row["review"], row["sentiment"])
+                    inserted_count += 1
+
+                st.success(f"{inserted_count} feedback entries successfully added!")
 
 
 # ================= LOAD STORED DATA =================
@@ -97,9 +115,23 @@ if data:
 
     trend = df.groupby(df["date"].dt.date)["sentiment"].mean()
 
-    vectorizer = CountVectorizer(stop_words="english", max_features=10)
-    X = vectorizer.fit_transform(df["review"])
-    keywords = vectorizer.get_feature_names_out()
+    reviews = df["review"].dropna()
+
+    if reviews.empty or (
+        reviews.apply(lambda x: isinstance(x, str)).all() and 
+        reviews.str.strip().eq("").all()
+    ):
+        keywords = []
+    else:
+        vectorizer = CountVectorizer(stop_words="english", max_features=10)
+        try:
+            X = vectorizer.fit_transform(reviews)
+            keywords = vectorizer.get_feature_names_out()
+        except ValueError as e:
+            if "empty vocabulary" in str(e).lower():
+                keywords = []
+            else:
+                raise
 
     # ================= DASHBOARD =================
 
@@ -149,6 +181,7 @@ if data:
 
         with col2:
             st.pyplot(fig)
+            plt.close(fig)  # Fix: prevents matplotlib memory leak
             st.markdown("---")
 
         st.subheader("Top Customer Issues")
@@ -177,7 +210,8 @@ if data:
 
         if st.button("🗑 Clear all stored feedback"):
             clear_data()
-            st.success("All data removed successfully.")
+            st.session_state.data_cleared = True
+            st.rerun()
 
         st.warning("This action cannot be undone.")
 
