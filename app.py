@@ -1,4 +1,6 @@
 import os
+import tempfile
+from pdf_generator import create_pdf
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -15,9 +17,10 @@ from openai import OpenAI
 
 # ---------- Chimera AI Client ----------
 
-api_key = os.getenv("OPENROUTER_API_KEY")
+api_key = st.secrets.get("OPENROUTER_API_KEY") or os.getenv("OPENROUTER_API_KEY")
+
 if not api_key:
-    raise ValueError("OPENROUTER_API_KEY environment variable not set. Please create a .env file with your API key.")
+    raise ValueError("OPENROUTER_API_KEY not found in Streamlit secrets or environment variables.")
 
 client = OpenAI(
     api_key=api_key,
@@ -26,6 +29,10 @@ client = OpenAI(
 
 st.title("📊 BizInsight AI")
 st.caption("AI-powered customer intelligence platform for business growth")
+
+if "data_cleared" in st.session_state:
+    st.success("All data removed successfully.")
+    del st.session_state.data_cleared
 
 tabs = st.tabs(["📊 Dashboard", "🤖 AI Assistant", "📂 Data Upload", "⚙ Controls"])
 
@@ -49,25 +56,30 @@ Analyze patterns, root problems and give improvement suggestions.
 Question:
 {question}
 """
+    try:
+        response = client.chat.completions.create(
+            model="tngtech/deepseek-r1t2-chimera:free",
+            messages=[
+                {"role": "system", "content": "You provide business intelligence insights."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.4
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        return f"⚠️ Error: Could not get a response from the AI. Please check your API key or try again later. (Details: {str(e)})"
 
-    response = client.chat.completions.create(
-        model="tngtech/deepseek-r1t2-chimera:free",
-        messages=[
-            {"role": "system", "content": "You provide business intelligence insights."},
-            {"role": "user", "content": prompt}
-        ],
-        temperature=0.4
-    )
-
-    return response.choices[0].message.content
-
+# ================= DATA UPLOAD =================
 
 # ================= DATA UPLOAD =================
 
 with tabs[2]:
     st.subheader("📂 Upload Customer Reviews")
 
-    uploaded_file = st.file_uploader("Upload CSV with review column", type="csv")
+    uploaded_file = st.file_uploader(
+        "Upload CSV with review column",
+        type="csv"
+    )
 
     MAX_ROWS = 5000
 
@@ -76,17 +88,50 @@ with tabs[2]:
 
         row_count = len(df)
 
+        # Row limit validation
         if row_count > MAX_ROWS:
-            st.error(f"Uploaded CSV contains {row_count} rows. Maximum allowed is {MAX_ROWS}.")
+            st.error(
+                f"Uploaded CSV contains {row_count} rows. "
+                f"Maximum allowed is {MAX_ROWS}."
+            )
             st.stop()
+
         st.dataframe(df, use_container_width=True)
 
-        df["sentiment"] = df["review"].apply(get_sentiment)
+        # Check review column
+        if "review" not in df.columns:
+            st.error("CSV must contain a 'review' column.")
 
-        for _, row in df.iterrows():
-            insert_feedback(row["review"], row["sentiment"])
+        else:
+            # Clean data
+            df = df.dropna(subset=["review"])
 
-        st.success("Feedback successfully added!")
+            df["review"] = df["review"].astype(str).str.strip()
+
+            df = df[df["review"] != ""]
+
+            if df.empty:
+                st.warning(
+                    "No valid reviews found after cleaning. "
+                    "Nothing to process."
+                )
+
+            else:
+                # Sentiment analysis
+                df["sentiment"] = df["review"].apply(get_sentiment)
+
+                inserted_count = 0
+
+                for _, row in df.iterrows():
+                    insert_feedback(
+                        row["review"],
+                        row["sentiment"]
+                    )
+                    inserted_count += 1
+
+                st.success(
+                    f"{inserted_count} feedback entries successfully added!"
+                )
 
 
 # ================= LOAD STORED DATA =================
@@ -107,13 +152,28 @@ def load_feedback():
         X = vectorizer.fit_transform(df["review"])
         keywords = vectorizer.get_feature_names_out()
 
-        return df, positive, negative, trend, keywords
-
-    return None, None, None, None, None
-
-
 df, positive, negative, trend, keywords = load_feedback()
+
 if df is not None:
+
+    reviews = df["review"].dropna()
+
+    if reviews.empty or (
+        reviews.apply(lambda x: isinstance(x, str)).all() and 
+        reviews.str.strip().eq("").all()
+    ):
+        keywords = []
+    else:
+        vectorizer = CountVectorizer(stop_words="english", max_features=10)
+        try:
+            X = vectorizer.fit_transform(reviews)
+            keywords = vectorizer.get_feature_names_out()
+        except ValueError as e:
+            if "empty vocabulary" in str(e).lower():
+                keywords = []
+            else:
+                raise
+
 
     # ================= DASHBOARD =================
 
@@ -126,7 +186,35 @@ if df is not None:
         c3.metric("Negative", negative)
 
         st.markdown("---")
+        # Create chart first
+        fig, ax = plt.subplots(figsize=(4,4))
 
+        ax.bar(
+            ["Positive", "Negative"],
+            [positive, negative]
+        )
+
+        plt.tight_layout()
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tmpfile:
+            chart_path = tmpfile.name
+
+            fig.savefig(chart_path)
+        if st.button("Generate PDF Report"):
+
+            # THEN create PDF
+            pdf_path = create_pdf(len(df), positive, negative, chart_path)
+
+            # Download button
+            with open(pdf_path, "rb") as pdf_file:
+
+                st.download_button(
+                label="Download Report",
+                data=pdf_file,
+                file_name="bizinsight_report.pdf",
+                mime="application/pdf"
+            )
+
+            # Dashboard visuals
         col1, col2 = st.columns([2,1])
 
         with col1:
@@ -134,11 +222,9 @@ if df is not None:
             st.line_chart(trend)
 
         with col2:
-            fig, ax = plt.subplots()
-            ax.bar(["Positive", "Negative"], [positive, negative])
             st.pyplot(fig)
-
-        st.markdown("---")
+            plt.close(fig)  # Fix: prevents matplotlib memory leak
+            st.markdown("---")
 
         st.subheader("Top Customer Issues")
         st.write(list(keywords))
@@ -164,7 +250,8 @@ if df is not None:
 
         if st.button("🗑 Clear all stored feedback"):
             clear_data()
-            st.success("All data removed successfully.")
+            st.session_state.data_cleared = True
+            st.rerun()
 
         st.warning("This action cannot be undone.")
 
