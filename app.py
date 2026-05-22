@@ -73,34 +73,53 @@ Question:
 
 with tabs[2]:
     st.subheader("📂 Upload Customer Reviews")
+    st.caption("CSV must contain a column named **review**. Other columns are ignored.")
 
-    uploaded_file = st.file_uploader("Upload CSV with review column", type="csv")
+    uploaded_file = st.file_uploader("Upload CSV with 'review' column", type="csv")
 
     if uploaded_file:
-        df = pd.read_csv(uploaded_file)
-        st.dataframe(df, width='stretch')
-        if "review" not in df.columns:
-            st.error("CSV must contain a 'review' column.")
-        else:
-            df = df.dropna(subset=["review"])
 
-            df["review"] = df["review"].astype(str).str.strip()
-            df = df[df["review"] != ""]
+        #Check 1: The CSV file should be readable and parseable
+        try:
+            df_upload = pd.read_csv(uploaded_file)
+        except Exception as e:
+            st.error(f"❌ Could not parse the CSV file: {e}")
+            st.stop()
 
-            if df.empty:
-                st.warning("No valid reviews found after cleaning. Nothing to process.")
-            else:
-                df["sentiment"] = df["review"].apply(get_sentiment)
+        #Check 2: The CSV file should not be completely empty
+        if df_upload.empty:
+            st.error("❌ The uploaded file is empty. Please upload a CSV with at least one row of data.")
+            st.stop()
 
-                inserted_count = 0
+        #Check 3: normalise column names (to trim accidental whitespace)
+        df_upload.columns = df_upload.columns.str.strip()
 
-                
-                for _, row in df.iterrows():
-                    insert_feedback(row["review"], row["sentiment"])
-                    inserted_count += 1
+        #Check 4: 'review' column must exist
+        if "review" not in df_upload.columns:
+            st.error(
+                "❌ A **'review'** column is required but was not found.\n\n"
+                f"Columns detected in your file: `{list(df_upload.columns)}`\n\n"
+                "💡 Rename the correct column to **review** and re-upload."
+            )
+            st.stop()
 
-                st.success(f"{inserted_count} feedback entries successfully added!")
+        # Check 5: review column must have usable text data (not just empty or blank)
+        df_upload["review"] = df_upload["review"].astype(str).str.strip()
+        df_valid = df_upload[df_upload["review"].str.len() > 0].copy()
 
+        if df_valid.empty:
+            st.error("❌ The **'review'** column exists but every row is empty or blank. Please check your data.")
+            st.stop()
+
+        st.dataframe(df_valid[["review"]], use_container_width=True)
+
+        # ── Sentiment & insert ─────────────────────────────────────────
+        df_valid["sentiment"] = df_valid["review"].apply(get_sentiment)
+
+        for _, row in df_valid.iterrows():
+            insert_feedback(row["review"], row["sentiment"])
+
+        st.success(f"🎉 {len(df_valid)} review(s) successfully saved to the database!")
 
 # ================= LOAD STORED DATA =================
 
