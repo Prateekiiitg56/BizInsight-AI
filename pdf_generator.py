@@ -92,7 +92,7 @@ def create_pdf(total, positive, negative, chart_path):
     pdf.multi_cell(0, 8, insight)
 
 
-#Recommendations
+    # Recommendations
     pdf.ln(5)
 
     pdf.set_font("Arial", "B", 13)
