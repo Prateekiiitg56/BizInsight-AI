@@ -17,15 +17,18 @@ from openai import OpenAI
 
 # ---------- Chimera AI Client ----------
 
-api_key = st.secrets.get("OPENROUTER_API_KEY") or os.getenv("OPENROUTER_API_KEY")
+try:
+    api_key = st.secrets["OPENROUTER_API_KEY"]
+except Exception:
+    api_key = os.getenv("OPENROUTER_API_KEY")
 
-if not api_key:
-    raise ValueError("OPENROUTER_API_KEY not found in Streamlit secrets or environment variables.")
+client = None
 
-client = OpenAI(
-    api_key=api_key,
-    base_url="https://openrouter.ai/api/v1"
-)
+if api_key:
+    client = OpenAI(
+        api_key=api_key,
+        base_url="https://openrouter.ai/api/v1"
+    )
 
 st.title("📊 BizInsight AI")
 st.caption("AI-powered customer intelligence platform for business growth")
