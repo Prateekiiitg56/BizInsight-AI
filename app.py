@@ -17,10 +17,12 @@ from openai import OpenAI
 
 # ---------- Chimera AI Client ----------
 
+api_key = os.getenv("OPENROUTER_API_KEY")
+
 try:
-    api_key = st.secrets["OPENROUTER_API_KEY"]
+    api_key = st.secrets.get("OPENROUTER_API_KEY") or api_key
 except Exception:
-    api_key = os.getenv("OPENROUTER_API_KEY")
+    pass
 
 client = None
 
@@ -200,8 +202,11 @@ if data:
         user_q = st.text_input("Type your business question here")
 
         if user_q:
-            with st.spinner("Analyzing feedback..."):
-                st.success(ask_ai(user_q, df["review"].tolist()))
+            if client is None:
+                st.warning("AI Assistant is unavailable. Please add your OPENROUTER_API_KEY.")
+            else:
+                with st.spinner("Analyzing feedback..."):
+                    st.success(ask_ai(user_q, df["review"].tolist()))
 
 
     # ================= CONTROLS =================
