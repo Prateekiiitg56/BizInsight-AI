@@ -125,12 +125,22 @@ with tabs[2]:
 
         df = pd.read_csv(uploaded_file)
 
+        # Trim whitespace from column names
+        df.columns = df.columns.str.strip()
+
+        # Find review column (case-insensitive)
+        review_col = [col for col in df.columns if col.lower() == "review"]
+
         st.dataframe(df, use_container_width=True)
 
-        if "review" not in df.columns:
+        if not review_col:
             st.error("CSV must contain a 'review' column.")
 
         else:
+
+            # Rename to lowercase 'review' if different case
+            if review_col[0] != "review":
+                df = df.rename(columns={review_col[0]: "review"})
 
             df = df.dropna(subset=["review"])
 
