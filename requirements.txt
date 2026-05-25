@@ -6,3 +6,12 @@ textblob
 openai
 python-dotenv
 fpdf
+streamlit>=1.32.0
+pandas>=2.0.0
+numpy>=1.26.0
+matplotlib>=3.8.0
+vaderSentiment>=3.3.2          # fast rule-based scorer
+transformers>=4.40.0           # BERT models via HuggingFace
+torch>=2.2.0                   # PyTorch backend for BERT
+requests>=2.31.0          
+
