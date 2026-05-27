@@ -145,9 +145,12 @@ if data:
     neutral = (df["sentiment"] == 0).sum()
     total = len(df)
 
-    pos_pct = round(positive / total * 100, 2)
-    neg_pct = round(negative / total * 100, 2)
-    neu_pct = round(neutral / total * 100, 2)
+    if total==0:
+       pos_pct=neg_pct=neu_pct = 0
+    else:
+       pos_pct = round(positive / total * 100, 2)
+       neg_pct = round(negative / total * 100, 2)
+       neu_pct = round(neutral / total * 100, 2)
 
     trend = df.groupby(df["date"].dt.date)["sentiment"].mean()
 
