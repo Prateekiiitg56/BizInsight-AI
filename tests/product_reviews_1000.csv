@@ -1,0 +1,1001 @@
+Window Name,Username,User ID,review,Sentiment
+Amazon,PriyaS_93,U1001,The product stopped working after a week.,Negative
+Flipkart,Vinay_47,U1002,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Amazon,AmitB_87,U1003,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Amazon,RohitP_86,U1004,"It's fine for casual use, but not professional work.",Neutral
+Flipkart,MeeraJain_85,U1005,Very bad customer service experience.,Negative
+Amazon,Vinay_38,U1006,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Flipkart,ArjunDev_85,U1007,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Flipkart,MeeraJain_81,U1008,The headphones have crystal clear sound and great bass.,Positive
+Flipkart,RahulK_10,U1009,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Amazon,MeeraJain_40,U1010,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Flipkart,ArjunDev_12,U1011,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Amazon,MeeraJain_82,U1012,"Design is nice, but functionality could be better.",Neutral
+Flipkart,Vinay_57,U1013,Amazing product quality and quick delivery.,Positive
+Flipkart,Vinay_13,U1014,"It's fine for casual use, but not professional work.",Neutral
+Amazon,SnehaM_79,U1015,The headphones have crystal clear sound and great bass.,Positive
+Amazon,PriyaS_14,U1016,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Flipkart,SnehaM_74,U1017,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Amazon,PriyaS_88,U1018,"Performance is average, nothing exceptional.",Neutral
+Flipkart,MeeraJain_35,U1019,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Flipkart,PriyaS_41,U1020,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Flipkart,RahulK_15,U1021,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Flipkart,RahulK_42,U1022,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Amazon,KunalV_30,U1023,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Amazon,SimranK_68,U1024,Amazing product quality and quick delivery.,Positive
+Amazon,PriyaS_94,U1025,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Flipkart,SnehaM_71,U1026,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Amazon,KunalV_85,U1027,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Flipkart,SnehaM_52,U1028,Poor build quality and slow performance.,Negative
+Flipkart,RahulK_38,U1029,The headphones have crystal clear sound and great bass.,Positive
+Amazon,AmitB_93,U1030,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Flipkart,MeeraJain_11,U1031,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Amazon,RahulK_17,U1032,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Amazon,PriyaS_13,U1033,Amazing product quality and quick delivery.,Positive
+Amazon,PriyaS_10,U1034,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Flipkart,KunalV_23,U1035,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Flipkart,Vinay_71,U1036,The headphones have crystal clear sound and great bass.,Positive
+Flipkart,SimranK_77,U1037,"Design is nice, but functionality could be better.",Neutral
+Flipkart,ArjunDev_67,U1038,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Flipkart,KunalV_82,U1039,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Amazon,MeeraJain_88,U1040,Very bad customer service experience.,Negative
+Flipkart,KunalV_81,U1041,Very bad customer service experience.,Negative
+Flipkart,SimranK_42,U1042,"Performance is average, nothing exceptional.",Neutral
+Amazon,Vinay_17,U1043,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Flipkart,MeeraJain_58,U1044,"Design is nice, but functionality could be better.",Neutral
+Flipkart,SnehaM_28,U1045,Amazing product quality and quick delivery.,Positive
+Amazon,KunalV_28,U1046,Amazing product quality and quick delivery.,Positive
+Flipkart,KunalV_77,U1047,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Amazon,ArjunDev_23,U1048,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Amazon,AmitB_23,U1049,"Performance is average, nothing exceptional.",Neutral
+Flipkart,RahulK_61,U1050,The product stopped working after a week.,Negative
+Amazon,AmitB_54,U1051,The product stopped working after a week.,Negative
+Flipkart,RohitP_25,U1052,Very bad customer service experience.,Negative
+Amazon,KunalV_92,U1053,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Amazon,KunalV_18,U1054,Amazing product quality and quick delivery.,Positive
+Flipkart,SnehaM_96,U1055,"Performance is average, nothing exceptional.",Neutral
+Amazon,ArjunDev_72,U1056,"It's fine for casual use, but not professional work.",Neutral
+Flipkart,SnehaM_52,U1057,"Design is nice, but functionality could be better.",Neutral
+Flipkart,SimranK_15,U1058,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Flipkart,SnehaM_87,U1059,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Flipkart,SimranK_19,U1060,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Amazon,KunalV_98,U1061,Very bad customer service experience.,Negative
+Amazon,RohitP_93,U1062,"It's fine for casual use, but not professional work.",Neutral
+Flipkart,ArjunDev_23,U1063,Amazing product quality and quick delivery.,Positive
+Amazon,RohitP_50,U1064,"It's fine for casual use, but not professional work.",Neutral
+Amazon,PriyaS_83,U1065,"Performance is average, nothing exceptional.",Neutral
+Amazon,RohitP_49,U1066,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Flipkart,ArjunDev_27,U1067,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Amazon,SimranK_37,U1068,"Performance is average, nothing exceptional.",Neutral
+Amazon,SimranK_72,U1069,The headphones have crystal clear sound and great bass.,Positive
+Amazon,SimranK_80,U1070,Amazing product quality and quick delivery.,Positive
+Flipkart,SnehaM_91,U1071,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Flipkart,KunalV_88,U1072,Poor build quality and slow performance.,Negative
+Flipkart,MeeraJain_86,U1073,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Flipkart,MeeraJain_75,U1074,The headphones have crystal clear sound and great bass.,Positive
+Flipkart,PriyaS_40,U1075,"Performance is average, nothing exceptional.",Neutral
+Flipkart,SimranK_39,U1076,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Flipkart,PriyaS_67,U1077,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Amazon,AmitB_42,U1078,"Performance is average, nothing exceptional.",Neutral
+Flipkart,SimranK_39,U1079,The headphones have crystal clear sound and great bass.,Positive
+Flipkart,KunalV_31,U1080,"Performance is average, nothing exceptional.",Neutral
+Flipkart,AmitB_48,U1081,Amazing product quality and quick delivery.,Positive
+Amazon,AmitB_32,U1082,The headphones have crystal clear sound and great bass.,Positive
+Amazon,RahulK_70,U1083,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Flipkart,ArjunDev_66,U1084,Poor build quality and slow performance.,Negative
+Amazon,RahulK_31,U1085,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Amazon,RohitP_18,U1086,"Design is nice, but functionality could be better.",Neutral
+Amazon,RahulK_71,U1087,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Flipkart,PriyaS_57,U1088,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Flipkart,ArjunDev_55,U1089,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Amazon,MeeraJain_90,U1090,"It's fine for casual use, but not professional work.",Neutral
+Amazon,RahulK_63,U1091,"It's fine for casual use, but not professional work.",Neutral
+Flipkart,RahulK_75,U1092,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Amazon,RohitP_10,U1093,"It's fine for casual use, but not professional work.",Neutral
+Flipkart,SnehaM_44,U1094,The headphones have crystal clear sound and great bass.,Positive
+Flipkart,ArjunDev_22,U1095,Amazing product quality and quick delivery.,Positive
+Flipkart,AmitB_54,U1096,"It's fine for casual use, but not professional work.",Neutral
+Flipkart,KunalV_56,U1097,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Flipkart,Vinay_73,U1098,"It's fine for casual use, but not professional work.",Neutral
+Amazon,MeeraJain_88,U1099,"Product is decent, but not worth the price.",Neutral
+Amazon,RahulK_98,U1100,The headphones have crystal clear sound and great bass.,Positive
+Amazon,RohitP_58,U1101,"Product is decent, but not worth the price.",Neutral
+Flipkart,Vinay_68,U1102,Poor build quality and slow performance.,Negative
+Amazon,SnehaM_58,U1103,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Flipkart,ArjunDev_41,U1104,"Product is decent, but not worth the price.",Neutral
+Amazon,SimranK_44,U1105,"Performance is average, nothing exceptional.",Neutral
+Amazon,MeeraJain_23,U1106,"It's fine for casual use, but not professional work.",Neutral
+Flipkart,KunalV_43,U1107,"Product is decent, but not worth the price.",Neutral
+Amazon,ArjunDev_35,U1108,The product stopped working after a week.,Negative
+Amazon,AmitB_33,U1109,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Flipkart,RohitP_21,U1110,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Flipkart,SnehaM_77,U1111,The product stopped working after a week.,Negative
+Amazon,SimranK_84,U1112,"Design is nice, but functionality could be better.",Neutral
+Amazon,RohitP_49,U1113,"Product is decent, but not worth the price.",Neutral
+Flipkart,SimranK_82,U1114,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Flipkart,SimranK_37,U1115,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Amazon,ArjunDev_52,U1116,"Performance is average, nothing exceptional.",Neutral
+Amazon,SnehaM_60,U1117,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Amazon,MeeraJain_77,U1118,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Flipkart,RohitP_45,U1119,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Flipkart,RohitP_34,U1120,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Flipkart,ArjunDev_72,U1121,Amazing product quality and quick delivery.,Positive
+Flipkart,KunalV_43,U1122,"Performance is average, nothing exceptional.",Neutral
+Amazon,KunalV_87,U1123,"It's fine for casual use, but not professional work.",Neutral
+Amazon,SimranK_32,U1124,"Design is nice, but functionality could be better.",Neutral
+Flipkart,ArjunDev_51,U1125,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Amazon,MeeraJain_53,U1126,"It's fine for casual use, but not professional work.",Neutral
+Amazon,PriyaS_57,U1127,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Amazon,RohitP_52,U1128,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Amazon,Vinay_65,U1129,"It's fine for casual use, but not professional work.",Neutral
+Amazon,SnehaM_18,U1130,"Design is nice, but functionality could be better.",Neutral
+Flipkart,ArjunDev_17,U1131,"Performance is average, nothing exceptional.",Neutral
+Amazon,SnehaM_68,U1132,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Amazon,ArjunDev_23,U1133,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Flipkart,MeeraJain_62,U1134,Very bad customer service experience.,Negative
+Flipkart,AmitB_34,U1135,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Flipkart,KunalV_50,U1136,Amazing product quality and quick delivery.,Positive
+Flipkart,KunalV_45,U1137,Very bad customer service experience.,Negative
+Amazon,AmitB_55,U1138,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Flipkart,KunalV_74,U1139,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Flipkart,SimranK_56,U1140,"Performance is average, nothing exceptional.",Neutral
+Flipkart,RohitP_94,U1141,Very bad customer service experience.,Negative
+Flipkart,Vinay_56,U1142,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Flipkart,RohitP_51,U1143,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Flipkart,ArjunDev_39,U1144,Amazing product quality and quick delivery.,Positive
+Flipkart,SimranK_76,U1145,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Flipkart,KunalV_13,U1146,"It's fine for casual use, but not professional work.",Neutral
+Flipkart,SnehaM_35,U1147,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Flipkart,Vinay_95,U1148,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Amazon,RahulK_80,U1149,The headphones have crystal clear sound and great bass.,Positive
+Amazon,SnehaM_53,U1150,Amazing product quality and quick delivery.,Positive
+Flipkart,Vinay_61,U1151,"Product is decent, but not worth the price.",Neutral
+Flipkart,RohitP_38,U1152,The product stopped working after a week.,Negative
+Amazon,RahulK_14,U1153,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Amazon,RahulK_37,U1154,"Performance is average, nothing exceptional.",Neutral
+Flipkart,Vinay_35,U1155,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Amazon,PriyaS_55,U1156,"It's fine for casual use, but not professional work.",Neutral
+Flipkart,ArjunDev_85,U1157,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Amazon,PriyaS_53,U1158,"Design is nice, but functionality could be better.",Neutral
+Flipkart,ArjunDev_17,U1159,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Amazon,RahulK_28,U1160,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Flipkart,Vinay_88,U1161,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Flipkart,RohitP_94,U1162,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Flipkart,ArjunDev_55,U1163,Very bad customer service experience.,Negative
+Flipkart,SimranK_60,U1164,The product stopped working after a week.,Negative
+Amazon,Vinay_31,U1165,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Flipkart,Vinay_57,U1166,"Product is decent, but not worth the price.",Neutral
+Flipkart,PriyaS_37,U1167,The headphones have crystal clear sound and great bass.,Positive
+Flipkart,MeeraJain_18,U1168,"It's fine for casual use, but not professional work.",Neutral
+Amazon,Vinay_25,U1169,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Amazon,SnehaM_70,U1170,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Flipkart,PriyaS_94,U1171,"Design is nice, but functionality could be better.",Neutral
+Amazon,RohitP_11,U1172,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Flipkart,PriyaS_48,U1173,"It's fine for casual use, but not professional work.",Neutral
+Flipkart,SimranK_97,U1174,"Design is nice, but functionality could be better.",Neutral
+Amazon,RohitP_38,U1175,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Flipkart,ArjunDev_63,U1176,Poor build quality and slow performance.,Negative
+Amazon,SnehaM_10,U1177,Amazing product quality and quick delivery.,Positive
+Flipkart,ArjunDev_20,U1178,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Flipkart,PriyaS_61,U1179,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Amazon,SimranK_60,U1180,Amazing product quality and quick delivery.,Positive
+Flipkart,Vinay_65,U1181,"Design is nice, but functionality could be better.",Neutral
+Amazon,SimranK_40,U1182,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Amazon,ArjunDev_31,U1183,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Flipkart,RahulK_35,U1184,Very bad customer service experience.,Negative
+Flipkart,MeeraJain_99,U1185,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Flipkart,SimranK_56,U1186,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Amazon,KunalV_58,U1187,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Flipkart,MeeraJain_21,U1188,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Flipkart,MeeraJain_11,U1189,Very bad customer service experience.,Negative
+Flipkart,KunalV_87,U1190,"Product is decent, but not worth the price.",Neutral
+Flipkart,MeeraJain_42,U1191,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Flipkart,PriyaS_67,U1192,"Design is nice, but functionality could be better.",Neutral
+Flipkart,Vinay_26,U1193,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Flipkart,ArjunDev_67,U1194,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Flipkart,MeeraJain_58,U1195,"It's fine for casual use, but not professional work.",Neutral
+Flipkart,RohitP_49,U1196,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Flipkart,KunalV_29,U1197,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Amazon,RahulK_83,U1198,The product stopped working after a week.,Negative
+Amazon,AmitB_12,U1199,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Flipkart,AmitB_77,U1200,"Performance is average, nothing exceptional.",Neutral
+Flipkart,Vinay_68,U1201,"Performance is average, nothing exceptional.",Neutral
+Flipkart,RohitP_91,U1202,Very bad customer service experience.,Negative
+Flipkart,KunalV_69,U1203,Poor build quality and slow performance.,Negative
+Amazon,RohitP_53,U1204,The headphones have crystal clear sound and great bass.,Positive
+Amazon,SimranK_68,U1205,Poor build quality and slow performance.,Negative
+Flipkart,KunalV_87,U1206,The headphones have crystal clear sound and great bass.,Positive
+Amazon,AmitB_34,U1207,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Amazon,SimranK_38,U1208,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Amazon,PriyaS_57,U1209,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Flipkart,AmitB_93,U1210,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Amazon,PriyaS_17,U1211,The headphones have crystal clear sound and great bass.,Positive
+Flipkart,ArjunDev_43,U1212,Poor build quality and slow performance.,Negative
+Amazon,RahulK_22,U1213,"Performance is average, nothing exceptional.",Neutral
+Flipkart,ArjunDev_28,U1214,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Amazon,Vinay_59,U1215,Poor build quality and slow performance.,Negative
+Amazon,KunalV_83,U1216,Amazing product quality and quick delivery.,Positive
+Amazon,Vinay_87,U1217,Poor build quality and slow performance.,Negative
+Amazon,SimranK_11,U1218,Amazing product quality and quick delivery.,Positive
+Amazon,RohitP_86,U1219,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Amazon,Vinay_26,U1220,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Amazon,RahulK_77,U1221,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Amazon,SnehaM_93,U1222,The headphones have crystal clear sound and great bass.,Positive
+Amazon,ArjunDev_53,U1223,The product stopped working after a week.,Negative
+Flipkart,RahulK_31,U1224,"Design is nice, but functionality could be better.",Neutral
+Flipkart,SimranK_32,U1225,"Product is decent, but not worth the price.",Neutral
+Flipkart,SimranK_78,U1226,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Flipkart,Vinay_63,U1227,The product stopped working after a week.,Negative
+Amazon,Vinay_43,U1228,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Flipkart,PriyaS_41,U1229,"It's fine for casual use, but not professional work.",Neutral
+Flipkart,AmitB_38,U1230,"Product is decent, but not worth the price.",Neutral
+Flipkart,KunalV_72,U1231,Poor build quality and slow performance.,Negative
+Flipkart,SimranK_41,U1232,"Performance is average, nothing exceptional.",Neutral
+Flipkart,AmitB_67,U1233,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Flipkart,SimranK_46,U1234,"It's fine for casual use, but not professional work.",Neutral
+Flipkart,SnehaM_43,U1235,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Flipkart,RahulK_83,U1236,"Product is decent, but not worth the price.",Neutral
+Amazon,SimranK_47,U1237,The product stopped working after a week.,Negative
+Flipkart,SimranK_70,U1238,"Design is nice, but functionality could be better.",Neutral
+Flipkart,RahulK_14,U1239,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Flipkart,ArjunDev_20,U1240,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Amazon,RahulK_86,U1241,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Amazon,KunalV_62,U1242,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Flipkart,Vinay_71,U1243,Very bad customer service experience.,Negative
+Flipkart,MeeraJain_55,U1244,Poor build quality and slow performance.,Negative
+Amazon,RohitP_41,U1245,Very bad customer service experience.,Negative
+Flipkart,PriyaS_79,U1246,"It's fine for casual use, but not professional work.",Neutral
+Flipkart,ArjunDev_63,U1247,The product stopped working after a week.,Negative
+Flipkart,RahulK_99,U1248,The headphones have crystal clear sound and great bass.,Positive
+Amazon,RohitP_94,U1249,"Product is decent, but not worth the price.",Neutral
+Amazon,MeeraJain_81,U1250,The product stopped working after a week.,Negative
+Amazon,RahulK_90,U1251,"Performance is average, nothing exceptional.",Neutral
+Amazon,RohitP_58,U1252,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Flipkart,ArjunDev_80,U1253,"Performance is average, nothing exceptional.",Neutral
+Amazon,KunalV_32,U1254,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Amazon,ArjunDev_65,U1255,"Design is nice, but functionality could be better.",Neutral
+Amazon,Vinay_85,U1256,"It's fine for casual use, but not professional work.",Neutral
+Flipkart,SimranK_56,U1257,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Flipkart,PriyaS_43,U1258,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Flipkart,RohitP_17,U1259,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Flipkart,KunalV_58,U1260,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Amazon,AmitB_80,U1261,"It's fine for casual use, but not professional work.",Neutral
+Flipkart,ArjunDev_92,U1262,The headphones have crystal clear sound and great bass.,Positive
+Flipkart,ArjunDev_65,U1263,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Flipkart,PriyaS_80,U1264,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Flipkart,MeeraJain_52,U1265,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Flipkart,PriyaS_57,U1266,The product stopped working after a week.,Negative
+Flipkart,KunalV_20,U1267,"Performance is average, nothing exceptional.",Neutral
+Flipkart,SnehaM_81,U1268,"Product is decent, but not worth the price.",Neutral
+Flipkart,ArjunDev_33,U1269,"It's fine for casual use, but not professional work.",Neutral
+Flipkart,SnehaM_70,U1270,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Amazon,PriyaS_80,U1271,"Product is decent, but not worth the price.",Neutral
+Amazon,Vinay_42,U1272,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Flipkart,PriyaS_22,U1273,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Flipkart,AmitB_11,U1274,"Design is nice, but functionality could be better.",Neutral
+Flipkart,MeeraJain_38,U1275,The product stopped working after a week.,Negative
+Flipkart,ArjunDev_25,U1276,The headphones have crystal clear sound and great bass.,Positive
+Amazon,ArjunDev_91,U1277,The product stopped working after a week.,Negative
+Amazon,MeeraJain_51,U1278,Very bad customer service experience.,Negative
+Amazon,AmitB_10,U1279,"Performance is average, nothing exceptional.",Neutral
+Flipkart,PriyaS_91,U1280,The headphones have crystal clear sound and great bass.,Positive
+Flipkart,SimranK_63,U1281,Poor build quality and slow performance.,Negative
+Flipkart,MeeraJain_79,U1282,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Flipkart,RahulK_53,U1283,"Product is decent, but not worth the price.",Neutral
+Flipkart,ArjunDev_57,U1284,"Product is decent, but not worth the price.",Neutral
+Flipkart,Vinay_88,U1285,"Design is nice, but functionality could be better.",Neutral
+Flipkart,SimranK_41,U1286,The product stopped working after a week.,Negative
+Amazon,RohitP_34,U1287,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Amazon,MeeraJain_10,U1288,"Design is nice, but functionality could be better.",Neutral
+Flipkart,ArjunDev_83,U1289,Amazing product quality and quick delivery.,Positive
+Amazon,ArjunDev_34,U1290,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Flipkart,RohitP_61,U1291,"Performance is average, nothing exceptional.",Neutral
+Flipkart,SnehaM_47,U1292,"Product is decent, but not worth the price.",Neutral
+Flipkart,PriyaS_87,U1293,The product stopped working after a week.,Negative
+Flipkart,SimranK_65,U1294,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Flipkart,SimranK_29,U1295,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Amazon,ArjunDev_71,U1296,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Flipkart,AmitB_33,U1297,"Design is nice, but functionality could be better.",Neutral
+Amazon,SnehaM_56,U1298,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Flipkart,KunalV_37,U1299,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Amazon,SimranK_18,U1300,"Design is nice, but functionality could be better.",Neutral
+Flipkart,SimranK_79,U1301,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Amazon,PriyaS_29,U1302,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Flipkart,SnehaM_96,U1303,Very bad customer service experience.,Negative
+Flipkart,RahulK_38,U1304,The product stopped working after a week.,Negative
+Amazon,SimranK_92,U1305,Poor build quality and slow performance.,Negative
+Amazon,SimranK_94,U1306,Amazing product quality and quick delivery.,Positive
+Flipkart,Vinay_75,U1307,The product stopped working after a week.,Negative
+Flipkart,SnehaM_45,U1308,Poor build quality and slow performance.,Negative
+Amazon,SimranK_78,U1309,"Product is decent, but not worth the price.",Neutral
+Flipkart,RahulK_60,U1310,"Design is nice, but functionality could be better.",Neutral
+Amazon,Vinay_24,U1311,Very bad customer service experience.,Negative
+Amazon,KunalV_27,U1312,The headphones have crystal clear sound and great bass.,Positive
+Amazon,SnehaM_59,U1313,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Flipkart,SnehaM_26,U1314,The product stopped working after a week.,Negative
+Flipkart,PriyaS_56,U1315,"Performance is average, nothing exceptional.",Neutral
+Flipkart,RohitP_99,U1316,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Flipkart,RahulK_61,U1317,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Amazon,AmitB_22,U1318,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Flipkart,ArjunDev_27,U1319,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Amazon,RahulK_91,U1320,"Performance is average, nothing exceptional.",Neutral
+Flipkart,ArjunDev_34,U1321,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Amazon,SnehaM_97,U1322,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Flipkart,PriyaS_59,U1323,"It's fine for casual use, but not professional work.",Neutral
+Flipkart,ArjunDev_67,U1324,"Design is nice, but functionality could be better.",Neutral
+Flipkart,KunalV_80,U1325,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Amazon,KunalV_97,U1326,The headphones have crystal clear sound and great bass.,Positive
+Amazon,PriyaS_29,U1327,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Flipkart,SnehaM_41,U1328,The headphones have crystal clear sound and great bass.,Positive
+Flipkart,ArjunDev_26,U1329,The headphones have crystal clear sound and great bass.,Positive
+Flipkart,PriyaS_83,U1330,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Amazon,Vinay_34,U1331,Amazing product quality and quick delivery.,Positive
+Flipkart,SnehaM_62,U1332,The headphones have crystal clear sound and great bass.,Positive
+Amazon,SnehaM_62,U1333,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Amazon,ArjunDev_57,U1334,Amazing product quality and quick delivery.,Positive
+Amazon,SimranK_56,U1335,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Amazon,AmitB_46,U1336,Very bad customer service experience.,Negative
+Flipkart,Vinay_73,U1337,Very bad customer service experience.,Negative
+Amazon,KunalV_14,U1338,"Performance is average, nothing exceptional.",Neutral
+Amazon,ArjunDev_82,U1339,Amazing product quality and quick delivery.,Positive
+Amazon,SnehaM_32,U1340,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Flipkart,KunalV_80,U1341,"Design is nice, but functionality could be better.",Neutral
+Flipkart,MeeraJain_65,U1342,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Amazon,PriyaS_15,U1343,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Flipkart,AmitB_83,U1344,"Product is decent, but not worth the price.",Neutral
+Flipkart,PriyaS_93,U1345,The product stopped working after a week.,Negative
+Amazon,ArjunDev_29,U1346,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Amazon,ArjunDev_62,U1347,"It's fine for casual use, but not professional work.",Neutral
+Amazon,KunalV_94,U1348,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Flipkart,SnehaM_43,U1349,Amazing product quality and quick delivery.,Positive
+Flipkart,SimranK_32,U1350,Very bad customer service experience.,Negative
+Amazon,AmitB_46,U1351,Poor build quality and slow performance.,Negative
+Flipkart,RohitP_86,U1352,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Flipkart,SnehaM_76,U1353,The product stopped working after a week.,Negative
+Flipkart,SimranK_39,U1354,"Design is nice, but functionality could be better.",Neutral
+Amazon,PriyaS_21,U1355,"Design is nice, but functionality could be better.",Neutral
+Flipkart,AmitB_39,U1356,"Performance is average, nothing exceptional.",Neutral
+Flipkart,SimranK_33,U1357,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Amazon,SnehaM_47,U1358,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Amazon,SnehaM_30,U1359,Amazing product quality and quick delivery.,Positive
+Amazon,KunalV_82,U1360,The product stopped working after a week.,Negative
+Amazon,RohitP_33,U1361,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Flipkart,SnehaM_10,U1362,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Flipkart,ArjunDev_81,U1363,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Flipkart,SnehaM_18,U1364,Amazing product quality and quick delivery.,Positive
+Flipkart,MeeraJain_30,U1365,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Flipkart,KunalV_60,U1366,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Flipkart,SimranK_46,U1367,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Flipkart,Vinay_53,U1368,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Amazon,AmitB_81,U1369,"Performance is average, nothing exceptional.",Neutral
+Amazon,RahulK_42,U1370,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Amazon,PriyaS_67,U1371,"Performance is average, nothing exceptional.",Neutral
+Amazon,PriyaS_37,U1372,Very bad customer service experience.,Negative
+Flipkart,AmitB_46,U1373,Poor build quality and slow performance.,Negative
+Amazon,PriyaS_24,U1374,"Product is decent, but not worth the price.",Neutral
+Amazon,KunalV_14,U1375,"It's fine for casual use, but not professional work.",Neutral
+Amazon,KunalV_19,U1376,"Design is nice, but functionality could be better.",Neutral
+Flipkart,SimranK_27,U1377,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Flipkart,MeeraJain_92,U1378,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Flipkart,Vinay_76,U1379,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Amazon,RohitP_56,U1380,"Product is decent, but not worth the price.",Neutral
+Flipkart,SimranK_98,U1381,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Flipkart,Vinay_93,U1382,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Amazon,KunalV_16,U1383,"It's fine for casual use, but not professional work.",Neutral
+Amazon,PriyaS_36,U1384,Very bad customer service experience.,Negative
+Flipkart,SnehaM_37,U1385,Very bad customer service experience.,Negative
+Flipkart,SnehaM_51,U1386,"Product is decent, but not worth the price.",Neutral
+Flipkart,SimranK_55,U1387,"Product is decent, but not worth the price.",Neutral
+Flipkart,PriyaS_89,U1388,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Amazon,KunalV_46,U1389,"It's fine for casual use, but not professional work.",Neutral
+Amazon,MeeraJain_29,U1390,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Amazon,AmitB_98,U1391,"Design is nice, but functionality could be better.",Neutral
+Amazon,MeeraJain_41,U1392,"Performance is average, nothing exceptional.",Neutral
+Amazon,SnehaM_73,U1393,Very bad customer service experience.,Negative
+Flipkart,Vinay_27,U1394,"Performance is average, nothing exceptional.",Neutral
+Amazon,SnehaM_64,U1395,Poor build quality and slow performance.,Negative
+Amazon,RahulK_74,U1396,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Flipkart,PriyaS_35,U1397,The headphones have crystal clear sound and great bass.,Positive
+Flipkart,SnehaM_65,U1398,The headphones have crystal clear sound and great bass.,Positive
+Amazon,PriyaS_62,U1399,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Amazon,ArjunDev_58,U1400,"Performance is average, nothing exceptional.",Neutral
+Amazon,Vinay_55,U1401,Amazing product quality and quick delivery.,Positive
+Flipkart,MeeraJain_32,U1402,"Performance is average, nothing exceptional.",Neutral
+Amazon,ArjunDev_22,U1403,"It's fine for casual use, but not professional work.",Neutral
+Amazon,SnehaM_89,U1404,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Flipkart,AmitB_11,U1405,Very bad customer service experience.,Negative
+Amazon,AmitB_71,U1406,The headphones have crystal clear sound and great bass.,Positive
+Flipkart,RahulK_89,U1407,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Amazon,ArjunDev_26,U1408,Poor build quality and slow performance.,Negative
+Amazon,AmitB_60,U1409,Very bad customer service experience.,Negative
+Flipkart,PriyaS_97,U1410,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Flipkart,RohitP_84,U1411,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Amazon,Vinay_87,U1412,Amazing product quality and quick delivery.,Positive
+Flipkart,MeeraJain_11,U1413,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Amazon,RahulK_17,U1414,The product stopped working after a week.,Negative
+Flipkart,SnehaM_49,U1415,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Amazon,SimranK_94,U1416,"Product is decent, but not worth the price.",Neutral
+Flipkart,KunalV_41,U1417,The product stopped working after a week.,Negative
+Flipkart,AmitB_76,U1418,"Design is nice, but functionality could be better.",Neutral
+Flipkart,SimranK_45,U1419,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Amazon,PriyaS_13,U1420,The product stopped working after a week.,Negative
+Flipkart,MeeraJain_10,U1421,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Amazon,Vinay_91,U1422,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Flipkart,RahulK_12,U1423,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Amazon,KunalV_48,U1424,"Performance is average, nothing exceptional.",Neutral
+Amazon,RohitP_48,U1425,"It's fine for casual use, but not professional work.",Neutral
+Flipkart,MeeraJain_19,U1426,"It's fine for casual use, but not professional work.",Neutral
+Flipkart,KunalV_52,U1427,Very bad customer service experience.,Negative
+Amazon,SnehaM_67,U1428,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Flipkart,SnehaM_61,U1429,"Product is decent, but not worth the price.",Neutral
+Amazon,PriyaS_23,U1430,Poor build quality and slow performance.,Negative
+Amazon,Vinay_29,U1431,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Amazon,PriyaS_66,U1432,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Amazon,PriyaS_90,U1433,The headphones have crystal clear sound and great bass.,Positive
+Amazon,SnehaM_49,U1434,"Product is decent, but not worth the price.",Neutral
+Amazon,RahulK_80,U1435,"Product is decent, but not worth the price.",Neutral
+Flipkart,PriyaS_60,U1436,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Amazon,KunalV_46,U1437,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Flipkart,RahulK_45,U1438,Very bad customer service experience.,Negative
+Flipkart,KunalV_35,U1439,"It's fine for casual use, but not professional work.",Neutral
+Amazon,SnehaM_13,U1440,The product stopped working after a week.,Negative
+Flipkart,RahulK_37,U1441,Amazing product quality and quick delivery.,Positive
+Flipkart,RahulK_27,U1442,"Performance is average, nothing exceptional.",Neutral
+Amazon,ArjunDev_43,U1443,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Amazon,ArjunDev_89,U1444,"Product is decent, but not worth the price.",Neutral
+Flipkart,ArjunDev_89,U1445,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Flipkart,RahulK_32,U1446,"Design is nice, but functionality could be better.",Neutral
+Flipkart,KunalV_95,U1447,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Flipkart,SnehaM_92,U1448,The headphones have crystal clear sound and great bass.,Positive
+Flipkart,AmitB_15,U1449,"Performance is average, nothing exceptional.",Neutral
+Amazon,SimranK_31,U1450,"Performance is average, nothing exceptional.",Neutral
+Amazon,Vinay_81,U1451,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Amazon,AmitB_21,U1452,"Design is nice, but functionality could be better.",Neutral
+Flipkart,RohitP_92,U1453,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Amazon,ArjunDev_70,U1454,The product stopped working after a week.,Negative
+Amazon,Vinay_45,U1455,Amazing product quality and quick delivery.,Positive
+Flipkart,KunalV_71,U1456,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Amazon,KunalV_83,U1457,The headphones have crystal clear sound and great bass.,Positive
+Amazon,AmitB_56,U1458,Amazing product quality and quick delivery.,Positive
+Amazon,AmitB_14,U1459,"Product is decent, but not worth the price.",Neutral
+Amazon,SimranK_26,U1460,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Flipkart,RohitP_99,U1461,Amazing product quality and quick delivery.,Positive
+Amazon,ArjunDev_99,U1462,The headphones have crystal clear sound and great bass.,Positive
+Amazon,PriyaS_35,U1463,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Flipkart,RahulK_11,U1464,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Flipkart,RahulK_34,U1465,The headphones have crystal clear sound and great bass.,Positive
+Flipkart,RahulK_41,U1466,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Amazon,ArjunDev_14,U1467,Amazing product quality and quick delivery.,Positive
+Flipkart,PriyaS_96,U1468,"Performance is average, nothing exceptional.",Neutral
+Amazon,RohitP_91,U1469,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Amazon,RohitP_69,U1470,The headphones have crystal clear sound and great bass.,Positive
+Amazon,ArjunDev_24,U1471,"Product is decent, but not worth the price.",Neutral
+Amazon,MeeraJain_62,U1472,"Performance is average, nothing exceptional.",Neutral
+Flipkart,ArjunDev_93,U1473,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Amazon,SnehaM_78,U1474,Amazing product quality and quick delivery.,Positive
+Amazon,SnehaM_77,U1475,"It's fine for casual use, but not professional work.",Neutral
+Amazon,ArjunDev_55,U1476,Very bad customer service experience.,Negative
+Flipkart,Vinay_26,U1477,"It's fine for casual use, but not professional work.",Neutral
+Flipkart,SimranK_47,U1478,The product stopped working after a week.,Negative
+Amazon,Vinay_33,U1479,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Amazon,RohitP_65,U1480,The product stopped working after a week.,Negative
+Flipkart,RahulK_97,U1481,"Product is decent, but not worth the price.",Neutral
+Flipkart,AmitB_17,U1482,"It's fine for casual use, but not professional work.",Neutral
+Flipkart,PriyaS_29,U1483,"It's fine for casual use, but not professional work.",Neutral
+Flipkart,KunalV_32,U1484,Very bad customer service experience.,Negative
+Flipkart,SimranK_83,U1485,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Amazon,SimranK_52,U1486,The product stopped working after a week.,Negative
+Flipkart,PriyaS_66,U1487,Very bad customer service experience.,Negative
+Amazon,AmitB_89,U1488,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Flipkart,RohitP_89,U1489,"It's fine for casual use, but not professional work.",Neutral
+Amazon,Vinay_71,U1490,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Flipkart,KunalV_61,U1491,Poor build quality and slow performance.,Negative
+Flipkart,KunalV_48,U1492,"It's fine for casual use, but not professional work.",Neutral
+Amazon,ArjunDev_89,U1493,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Amazon,AmitB_90,U1494,Very bad customer service experience.,Negative
+Flipkart,KunalV_88,U1495,Very bad customer service experience.,Negative
+Flipkart,KunalV_72,U1496,"Product is decent, but not worth the price.",Neutral
+Flipkart,AmitB_83,U1497,"Product is decent, but not worth the price.",Neutral
+Amazon,RahulK_76,U1498,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Flipkart,SimranK_60,U1499,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Amazon,Vinay_33,U1500,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Flipkart,ArjunDev_93,U1501,"Performance is average, nothing exceptional.",Neutral
+Amazon,RohitP_86,U1502,Poor build quality and slow performance.,Negative
+Amazon,Vinay_57,U1503,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Flipkart,AmitB_51,U1504,"Design is nice, but functionality could be better.",Neutral
+Amazon,Vinay_70,U1505,"It's fine for casual use, but not professional work.",Neutral
+Flipkart,AmitB_69,U1506,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Flipkart,RahulK_30,U1507,"Design is nice, but functionality could be better.",Neutral
+Amazon,MeeraJain_97,U1508,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Amazon,PriyaS_26,U1509,"Performance is average, nothing exceptional.",Neutral
+Amazon,RohitP_80,U1510,The product stopped working after a week.,Negative
+Flipkart,MeeraJain_21,U1511,"Product is decent, but not worth the price.",Neutral
+Flipkart,KunalV_40,U1512,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Flipkart,MeeraJain_57,U1513,The product stopped working after a week.,Negative
+Amazon,KunalV_31,U1514,Very bad customer service experience.,Negative
+Flipkart,Vinay_35,U1515,The product stopped working after a week.,Negative
+Amazon,SimranK_26,U1516,Amazing product quality and quick delivery.,Positive
+Amazon,SimranK_31,U1517,Very bad customer service experience.,Negative
+Flipkart,SimranK_75,U1518,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Amazon,MeeraJain_57,U1519,Poor build quality and slow performance.,Negative
+Flipkart,SnehaM_93,U1520,"Performance is average, nothing exceptional.",Neutral
+Flipkart,Vinay_57,U1521,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Flipkart,SimranK_48,U1522,The product stopped working after a week.,Negative
+Flipkart,KunalV_48,U1523,"It's fine for casual use, but not professional work.",Neutral
+Flipkart,Vinay_19,U1524,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Amazon,RohitP_71,U1525,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Amazon,RohitP_15,U1526,"Product is decent, but not worth the price.",Neutral
+Flipkart,RahulK_30,U1527,"Design is nice, but functionality could be better.",Neutral
+Flipkart,ArjunDev_12,U1528,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Flipkart,AmitB_84,U1529,The product stopped working after a week.,Negative
+Flipkart,SimranK_98,U1530,"Design is nice, but functionality could be better.",Neutral
+Flipkart,SnehaM_73,U1531,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Flipkart,SnehaM_12,U1532,Very bad customer service experience.,Negative
+Amazon,RohitP_43,U1533,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Amazon,RahulK_72,U1534,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Flipkart,SnehaM_81,U1535,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Flipkart,AmitB_95,U1536,"It's fine for casual use, but not professional work.",Neutral
+Flipkart,PriyaS_78,U1537,"Product is decent, but not worth the price.",Neutral
+Amazon,Vinay_55,U1538,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Flipkart,Vinay_96,U1539,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Amazon,SimranK_21,U1540,The product stopped working after a week.,Negative
+Amazon,RohitP_15,U1541,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Flipkart,SimranK_24,U1542,Amazing product quality and quick delivery.,Positive
+Flipkart,RohitP_66,U1543,The product stopped working after a week.,Negative
+Flipkart,ArjunDev_82,U1544,"Design is nice, but functionality could be better.",Neutral
+Flipkart,ArjunDev_54,U1545,The product stopped working after a week.,Negative
+Amazon,MeeraJain_57,U1546,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Amazon,ArjunDev_71,U1547,"It's fine for casual use, but not professional work.",Neutral
+Flipkart,AmitB_11,U1548,The product stopped working after a week.,Negative
+Amazon,KunalV_90,U1549,The headphones have crystal clear sound and great bass.,Positive
+Flipkart,RohitP_11,U1550,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Amazon,MeeraJain_66,U1551,The headphones have crystal clear sound and great bass.,Positive
+Amazon,SnehaM_28,U1552,"It's fine for casual use, but not professional work.",Neutral
+Amazon,RohitP_97,U1553,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Flipkart,MeeraJain_65,U1554,Amazing product quality and quick delivery.,Positive
+Flipkart,SnehaM_57,U1555,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Amazon,KunalV_14,U1556,"It's fine for casual use, but not professional work.",Neutral
+Flipkart,SnehaM_99,U1557,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Flipkart,MeeraJain_63,U1558,Very bad customer service experience.,Negative
+Flipkart,RahulK_38,U1559,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Flipkart,SimranK_88,U1560,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Amazon,Vinay_58,U1561,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Flipkart,KunalV_94,U1562,The product stopped working after a week.,Negative
+Flipkart,PriyaS_83,U1563,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Amazon,KunalV_52,U1564,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Flipkart,ArjunDev_48,U1565,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Flipkart,RahulK_62,U1566,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Amazon,RahulK_57,U1567,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Flipkart,RahulK_75,U1568,"It's fine for casual use, but not professional work.",Neutral
+Flipkart,AmitB_47,U1569,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Flipkart,RohitP_49,U1570,Poor build quality and slow performance.,Negative
+Amazon,ArjunDev_34,U1571,"Product is decent, but not worth the price.",Neutral
+Amazon,RohitP_93,U1572,The product stopped working after a week.,Negative
+Amazon,SnehaM_87,U1573,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Flipkart,SnehaM_37,U1574,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Amazon,SnehaM_71,U1575,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Flipkart,SnehaM_65,U1576,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Amazon,MeeraJain_75,U1577,The product stopped working after a week.,Negative
+Flipkart,KunalV_22,U1578,Poor build quality and slow performance.,Negative
+Flipkart,ArjunDev_24,U1579,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Flipkart,RahulK_10,U1580,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Flipkart,RahulK_47,U1581,"Product is decent, but not worth the price.",Neutral
+Flipkart,RahulK_92,U1582,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Flipkart,SnehaM_87,U1583,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Flipkart,Vinay_50,U1584,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Flipkart,ArjunDev_21,U1585,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Amazon,AmitB_35,U1586,"Design is nice, but functionality could be better.",Neutral
+Amazon,AmitB_89,U1587,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Flipkart,SnehaM_57,U1588,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Flipkart,PriyaS_32,U1589,The headphones have crystal clear sound and great bass.,Positive
+Amazon,PriyaS_32,U1590,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Amazon,Vinay_41,U1591,"Performance is average, nothing exceptional.",Neutral
+Amazon,Vinay_49,U1592,"It's fine for casual use, but not professional work.",Neutral
+Amazon,KunalV_40,U1593,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Flipkart,PriyaS_97,U1594,"Design is nice, but functionality could be better.",Neutral
+Amazon,AmitB_64,U1595,Amazing product quality and quick delivery.,Positive
+Flipkart,Vinay_61,U1596,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Flipkart,AmitB_89,U1597,Very bad customer service experience.,Negative
+Flipkart,RohitP_43,U1598,Amazing product quality and quick delivery.,Positive
+Flipkart,RahulK_51,U1599,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Flipkart,KunalV_37,U1600,"Design is nice, but functionality could be better.",Neutral
+Amazon,Vinay_79,U1601,Very bad customer service experience.,Negative
+Amazon,KunalV_71,U1602,"Performance is average, nothing exceptional.",Neutral
+Amazon,KunalV_11,U1603,Amazing product quality and quick delivery.,Positive
+Amazon,KunalV_45,U1604,Very bad customer service experience.,Negative
+Flipkart,SimranK_64,U1605,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Amazon,RohitP_88,U1606,"It's fine for casual use, but not professional work.",Neutral
+Flipkart,KunalV_79,U1607,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Flipkart,RohitP_31,U1608,"Design is nice, but functionality could be better.",Neutral
+Amazon,RohitP_81,U1609,The headphones have crystal clear sound and great bass.,Positive
+Flipkart,RohitP_24,U1610,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Flipkart,RahulK_42,U1611,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Amazon,RohitP_84,U1612,"Design is nice, but functionality could be better.",Neutral
+Flipkart,SimranK_22,U1613,"It's fine for casual use, but not professional work.",Neutral
+Amazon,KunalV_59,U1614,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Flipkart,KunalV_17,U1615,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Amazon,MeeraJain_45,U1616,Amazing product quality and quick delivery.,Positive
+Amazon,SimranK_67,U1617,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Flipkart,SimranK_30,U1618,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Flipkart,KunalV_83,U1619,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Amazon,SimranK_55,U1620,"Product is decent, but not worth the price.",Neutral
+Flipkart,RohitP_60,U1621,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Flipkart,MeeraJain_57,U1622,Poor build quality and slow performance.,Negative
+Amazon,Vinay_61,U1623,The headphones have crystal clear sound and great bass.,Positive
+Amazon,AmitB_85,U1624,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Flipkart,SnehaM_62,U1625,"Performance is average, nothing exceptional.",Neutral
+Amazon,RahulK_86,U1626,"Design is nice, but functionality could be better.",Neutral
+Flipkart,Vinay_63,U1627,The product stopped working after a week.,Negative
+Amazon,SnehaM_12,U1628,"Design is nice, but functionality could be better.",Neutral
+Flipkart,KunalV_86,U1629,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Flipkart,KunalV_40,U1630,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Amazon,PriyaS_92,U1631,Very bad customer service experience.,Negative
+Amazon,SnehaM_29,U1632,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Amazon,SnehaM_46,U1633,"Performance is average, nothing exceptional.",Neutral
+Amazon,RohitP_33,U1634,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Flipkart,SnehaM_59,U1635,"Design is nice, but functionality could be better.",Neutral
+Amazon,KunalV_26,U1636,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Flipkart,Vinay_80,U1637,Very bad customer service experience.,Negative
+Flipkart,RahulK_81,U1638,"Design is nice, but functionality could be better.",Neutral
+Flipkart,ArjunDev_84,U1639,Poor build quality and slow performance.,Negative
+Amazon,RohitP_96,U1640,"Product is decent, but not worth the price.",Neutral
+Flipkart,SimranK_29,U1641,"It's fine for casual use, but not professional work.",Neutral
+Flipkart,SimranK_34,U1642,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Amazon,SnehaM_36,U1643,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Flipkart,KunalV_88,U1644,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Flipkart,SimranK_29,U1645,"Performance is average, nothing exceptional.",Neutral
+Amazon,RahulK_12,U1646,The headphones have crystal clear sound and great bass.,Positive
+Flipkart,MeeraJain_20,U1647,The headphones have crystal clear sound and great bass.,Positive
+Amazon,AmitB_68,U1648,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Flipkart,SnehaM_31,U1649,The headphones have crystal clear sound and great bass.,Positive
+Amazon,PriyaS_76,U1650,The product stopped working after a week.,Negative
+Amazon,AmitB_13,U1651,Poor build quality and slow performance.,Negative
+Amazon,AmitB_15,U1652,Amazing product quality and quick delivery.,Positive
+Amazon,AmitB_57,U1653,Amazing product quality and quick delivery.,Positive
+Amazon,RohitP_43,U1654,Poor build quality and slow performance.,Negative
+Amazon,RohitP_97,U1655,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Amazon,ArjunDev_53,U1656,"It's fine for casual use, but not professional work.",Neutral
+Amazon,SnehaM_19,U1657,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Flipkart,PriyaS_91,U1658,"Performance is average, nothing exceptional.",Neutral
+Amazon,PriyaS_32,U1659,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Flipkart,RahulK_83,U1660,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Amazon,RohitP_41,U1661,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Amazon,RohitP_12,U1662,"It's fine for casual use, but not professional work.",Neutral
+Amazon,Vinay_92,U1663,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Flipkart,AmitB_17,U1664,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Amazon,Vinay_65,U1665,The headphones have crystal clear sound and great bass.,Positive
+Amazon,ArjunDev_42,U1666,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Amazon,RahulK_98,U1667,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Amazon,RohitP_31,U1668,"Product is decent, but not worth the price.",Neutral
+Flipkart,RahulK_22,U1669,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Flipkart,Vinay_29,U1670,Amazing product quality and quick delivery.,Positive
+Flipkart,ArjunDev_35,U1671,"Design is nice, but functionality could be better.",Neutral
+Amazon,PriyaS_65,U1672,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Amazon,RahulK_31,U1673,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Amazon,KunalV_58,U1674,"Performance is average, nothing exceptional.",Neutral
+Amazon,SimranK_33,U1675,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Flipkart,SimranK_56,U1676,"Performance is average, nothing exceptional.",Neutral
+Amazon,PriyaS_87,U1677,"Design is nice, but functionality could be better.",Neutral
+Amazon,RohitP_22,U1678,"Design is nice, but functionality could be better.",Neutral
+Amazon,SnehaM_99,U1679,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Flipkart,MeeraJain_15,U1680,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Amazon,Vinay_37,U1681,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Amazon,MeeraJain_75,U1682,"Performance is average, nothing exceptional.",Neutral
+Amazon,SnehaM_35,U1683,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Flipkart,RahulK_75,U1684,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Flipkart,MeeraJain_57,U1685,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Amazon,AmitB_58,U1686,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Flipkart,KunalV_73,U1687,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Flipkart,RahulK_37,U1688,"Performance is average, nothing exceptional.",Neutral
+Flipkart,MeeraJain_70,U1689,"Performance is average, nothing exceptional.",Neutral
+Flipkart,RohitP_73,U1690,The headphones have crystal clear sound and great bass.,Positive
+Flipkart,KunalV_49,U1691,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Flipkart,MeeraJain_30,U1692,Very bad customer service experience.,Negative
+Amazon,KunalV_59,U1693,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Amazon,SnehaM_86,U1694,Amazing product quality and quick delivery.,Positive
+Amazon,Vinay_34,U1695,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Flipkart,ArjunDev_81,U1696,Amazing product quality and quick delivery.,Positive
+Flipkart,MeeraJain_10,U1697,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Flipkart,RohitP_36,U1698,Poor build quality and slow performance.,Negative
+Amazon,Vinay_98,U1699,The product stopped working after a week.,Negative
+Amazon,RahulK_92,U1700,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Amazon,AmitB_51,U1701,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Amazon,AmitB_49,U1702,"Performance is average, nothing exceptional.",Neutral
+Flipkart,KunalV_90,U1703,"Design is nice, but functionality could be better.",Neutral
+Amazon,AmitB_87,U1704,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Amazon,RohitP_63,U1705,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Flipkart,KunalV_87,U1706,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Amazon,RohitP_58,U1707,Amazing product quality and quick delivery.,Positive
+Amazon,MeeraJain_37,U1708,The product stopped working after a week.,Negative
+Flipkart,ArjunDev_58,U1709,Poor build quality and slow performance.,Negative
+Amazon,AmitB_41,U1710,"Design is nice, but functionality could be better.",Neutral
+Flipkart,Vinay_63,U1711,Amazing product quality and quick delivery.,Positive
+Flipkart,Vinay_33,U1712,Very bad customer service experience.,Negative
+Flipkart,RahulK_64,U1713,Poor build quality and slow performance.,Negative
+Flipkart,RahulK_81,U1714,The product stopped working after a week.,Negative
+Amazon,RohitP_28,U1715,Poor build quality and slow performance.,Negative
+Amazon,SimranK_64,U1716,"Design is nice, but functionality could be better.",Neutral
+Flipkart,RohitP_15,U1717,"Performance is average, nothing exceptional.",Neutral
+Amazon,RahulK_35,U1718,Poor build quality and slow performance.,Negative
+Flipkart,KunalV_36,U1719,"Performance is average, nothing exceptional.",Neutral
+Flipkart,PriyaS_30,U1720,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Flipkart,RohitP_65,U1721,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Flipkart,SnehaM_65,U1722,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Flipkart,RahulK_63,U1723,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Amazon,SnehaM_34,U1724,The headphones have crystal clear sound and great bass.,Positive
+Flipkart,RohitP_85,U1725,The product stopped working after a week.,Negative
+Amazon,ArjunDev_76,U1726,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Amazon,SimranK_79,U1727,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Flipkart,ArjunDev_89,U1728,"Performance is average, nothing exceptional.",Neutral
+Flipkart,AmitB_35,U1729,Very bad customer service experience.,Negative
+Amazon,AmitB_23,U1730,The product stopped working after a week.,Negative
+Amazon,SnehaM_54,U1731,The headphones have crystal clear sound and great bass.,Positive
+Flipkart,RohitP_10,U1732,Amazing product quality and quick delivery.,Positive
+Flipkart,SnehaM_98,U1733,The product stopped working after a week.,Negative
+Flipkart,MeeraJain_68,U1734,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Amazon,KunalV_40,U1735,The headphones have crystal clear sound and great bass.,Positive
+Amazon,SimranK_10,U1736,"Design is nice, but functionality could be better.",Neutral
+Flipkart,RahulK_64,U1737,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Flipkart,Vinay_39,U1738,Very bad customer service experience.,Negative
+Amazon,RohitP_21,U1739,"It's fine for casual use, but not professional work.",Neutral
+Flipkart,KunalV_57,U1740,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Amazon,AmitB_93,U1741,Very bad customer service experience.,Negative
+Amazon,AmitB_80,U1742,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Flipkart,KunalV_86,U1743,"It's fine for casual use, but not professional work.",Neutral
+Flipkart,ArjunDev_63,U1744,"Product is decent, but not worth the price.",Neutral
+Flipkart,SimranK_60,U1745,"Design is nice, but functionality could be better.",Neutral
+Amazon,Vinay_18,U1746,Very bad customer service experience.,Negative
+Flipkart,ArjunDev_77,U1747,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Amazon,RahulK_86,U1748,Very bad customer service experience.,Negative
+Flipkart,ArjunDev_63,U1749,"Product is decent, but not worth the price.",Neutral
+Flipkart,PriyaS_47,U1750,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Flipkart,AmitB_12,U1751,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Amazon,SnehaM_86,U1752,Very bad customer service experience.,Negative
+Flipkart,PriyaS_52,U1753,Very bad customer service experience.,Negative
+Flipkart,MeeraJain_37,U1754,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Flipkart,RahulK_38,U1755,The product stopped working after a week.,Negative
+Flipkart,SimranK_97,U1756,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Flipkart,Vinay_79,U1757,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Amazon,PriyaS_52,U1758,"Design is nice, but functionality could be better.",Neutral
+Amazon,SimranK_22,U1759,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Amazon,SimranK_93,U1760,"Design is nice, but functionality could be better.",Neutral
+Amazon,RohitP_42,U1761,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Amazon,ArjunDev_96,U1762,"It's fine for casual use, but not professional work.",Neutral
+Amazon,MeeraJain_31,U1763,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Flipkart,PriyaS_70,U1764,The product stopped working after a week.,Negative
+Flipkart,RohitP_16,U1765,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Flipkart,AmitB_80,U1766,Poor build quality and slow performance.,Negative
+Amazon,RahulK_32,U1767,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Flipkart,SimranK_10,U1768,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Flipkart,SnehaM_16,U1769,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Amazon,ArjunDev_28,U1770,"Product is decent, but not worth the price.",Neutral
+Amazon,Vinay_79,U1771,The product stopped working after a week.,Negative
+Flipkart,MeeraJain_64,U1772,"Design is nice, but functionality could be better.",Neutral
+Amazon,ArjunDev_22,U1773,"Product is decent, but not worth the price.",Neutral
+Flipkart,PriyaS_66,U1774,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Amazon,KunalV_48,U1775,"Performance is average, nothing exceptional.",Neutral
+Amazon,SimranK_90,U1776,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Flipkart,KunalV_45,U1777,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Flipkart,Vinay_35,U1778,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Amazon,MeeraJain_49,U1779,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Flipkart,KunalV_38,U1780,Very bad customer service experience.,Negative
+Flipkart,SimranK_20,U1781,The product stopped working after a week.,Negative
+Amazon,PriyaS_69,U1782,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Flipkart,ArjunDev_96,U1783,Very bad customer service experience.,Negative
+Amazon,MeeraJain_46,U1784,"Design is nice, but functionality could be better.",Neutral
+Flipkart,SimranK_80,U1785,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Amazon,AmitB_83,U1786,"Performance is average, nothing exceptional.",Neutral
+Amazon,KunalV_51,U1787,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Flipkart,SnehaM_88,U1788,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Flipkart,SnehaM_97,U1789,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Amazon,SnehaM_89,U1790,The product stopped working after a week.,Negative
+Amazon,RohitP_26,U1791,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Flipkart,SimranK_91,U1792,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Flipkart,SnehaM_21,U1793,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Amazon,RahulK_49,U1794,"Product is decent, but not worth the price.",Neutral
+Amazon,ArjunDev_91,U1795,"It's fine for casual use, but not professional work.",Neutral
+Flipkart,SnehaM_41,U1796,"Product is decent, but not worth the price.",Neutral
+Flipkart,MeeraJain_36,U1797,"Performance is average, nothing exceptional.",Neutral
+Amazon,SimranK_59,U1798,Amazing product quality and quick delivery.,Positive
+Amazon,SnehaM_50,U1799,The headphones have crystal clear sound and great bass.,Positive
+Flipkart,RohitP_26,U1800,Amazing product quality and quick delivery.,Positive
+Flipkart,MeeraJain_58,U1801,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Flipkart,RahulK_53,U1802,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Flipkart,SimranK_86,U1803,"Product is decent, but not worth the price.",Neutral
+Amazon,ArjunDev_44,U1804,The product stopped working after a week.,Negative
+Amazon,RahulK_69,U1805,"Design is nice, but functionality could be better.",Neutral
+Amazon,RohitP_74,U1806,The headphones have crystal clear sound and great bass.,Positive
+Flipkart,Vinay_11,U1807,"Performance is average, nothing exceptional.",Neutral
+Amazon,AmitB_50,U1808,"Product is decent, but not worth the price.",Neutral
+Amazon,AmitB_50,U1809,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Flipkart,SnehaM_58,U1810,"Performance is average, nothing exceptional.",Neutral
+Amazon,SnehaM_12,U1811,Amazing product quality and quick delivery.,Positive
+Amazon,PriyaS_78,U1812,Poor build quality and slow performance.,Negative
+Flipkart,ArjunDev_32,U1813,"Product is decent, but not worth the price.",Neutral
+Flipkart,MeeraJain_71,U1814,"Design is nice, but functionality could be better.",Neutral
+Amazon,ArjunDev_78,U1815,"Design is nice, but functionality could be better.",Neutral
+Flipkart,SnehaM_10,U1816,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Amazon,SnehaM_55,U1817,Amazing product quality and quick delivery.,Positive
+Flipkart,KunalV_99,U1818,"Performance is average, nothing exceptional.",Neutral
+Amazon,ArjunDev_42,U1819,"It's fine for casual use, but not professional work.",Neutral
+Amazon,RohitP_17,U1820,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Flipkart,SimranK_85,U1821,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Amazon,SimranK_33,U1822,Amazing product quality and quick delivery.,Positive
+Amazon,Vinay_88,U1823,The headphones have crystal clear sound and great bass.,Positive
+Flipkart,Vinay_71,U1824,The product stopped working after a week.,Negative
+Flipkart,RahulK_30,U1825,The headphones have crystal clear sound and great bass.,Positive
+Flipkart,ArjunDev_26,U1826,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Flipkart,Vinay_80,U1827,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Amazon,Vinay_91,U1828,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Amazon,RohitP_18,U1829,"Design is nice, but functionality could be better.",Neutral
+Amazon,RohitP_17,U1830,"It's fine for casual use, but not professional work.",Neutral
+Amazon,ArjunDev_78,U1831,Amazing product quality and quick delivery.,Positive
+Flipkart,ArjunDev_52,U1832,Poor build quality and slow performance.,Negative
+Amazon,MeeraJain_92,U1833,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Flipkart,Vinay_44,U1834,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Amazon,RohitP_93,U1835,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Flipkart,RohitP_30,U1836,Very bad customer service experience.,Negative
+Amazon,PriyaS_43,U1837,"Performance is average, nothing exceptional.",Neutral
+Flipkart,PriyaS_10,U1838,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Flipkart,KunalV_18,U1839,"Design is nice, but functionality could be better.",Neutral
+Amazon,SimranK_87,U1840,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Amazon,ArjunDev_57,U1841,"It's fine for casual use, but not professional work.",Neutral
+Amazon,RohitP_16,U1842,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Amazon,AmitB_93,U1843,"Performance is average, nothing exceptional.",Neutral
+Amazon,RahulK_66,U1844,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Amazon,SnehaM_78,U1845,Very bad customer service experience.,Negative
+Amazon,Vinay_36,U1846,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Flipkart,ArjunDev_86,U1847,Amazing product quality and quick delivery.,Positive
+Amazon,PriyaS_17,U1848,"Design is nice, but functionality could be better.",Neutral
+Flipkart,RohitP_32,U1849,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Amazon,AmitB_39,U1850,"Performance is average, nothing exceptional.",Neutral
+Flipkart,RohitP_18,U1851,Poor build quality and slow performance.,Negative
+Flipkart,AmitB_47,U1852,Very bad customer service experience.,Negative
+Amazon,SnehaM_38,U1853,Amazing product quality and quick delivery.,Positive
+Flipkart,SnehaM_15,U1854,Very bad customer service experience.,Negative
+Amazon,AmitB_98,U1855,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Amazon,PriyaS_69,U1856,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Amazon,SnehaM_16,U1857,"It's fine for casual use, but not professional work.",Neutral
+Amazon,RohitP_25,U1858,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Flipkart,KunalV_37,U1859,The headphones have crystal clear sound and great bass.,Positive
+Flipkart,Vinay_54,U1860,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Flipkart,Vinay_34,U1861,"Design is nice, but functionality could be better.",Neutral
+Flipkart,AmitB_53,U1862,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Amazon,AmitB_53,U1863,Amazing product quality and quick delivery.,Positive
+Amazon,RohitP_96,U1864,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Amazon,RahulK_20,U1865,"Product is decent, but not worth the price.",Neutral
+Amazon,SimranK_99,U1866,"Design is nice, but functionality could be better.",Neutral
+Amazon,ArjunDev_17,U1867,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Amazon,KunalV_13,U1868,"Performance is average, nothing exceptional.",Neutral
+Flipkart,MeeraJain_25,U1869,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Flipkart,AmitB_36,U1870,Amazing product quality and quick delivery.,Positive
+Flipkart,SimranK_70,U1871,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Flipkart,RohitP_31,U1872,"Design is nice, but functionality could be better.",Neutral
+Amazon,ArjunDev_56,U1873,Very bad customer service experience.,Negative
+Amazon,AmitB_63,U1874,Amazing product quality and quick delivery.,Positive
+Flipkart,SimranK_98,U1875,Very bad customer service experience.,Negative
+Amazon,KunalV_95,U1876,"Performance is average, nothing exceptional.",Neutral
+Flipkart,Vinay_78,U1877,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Flipkart,ArjunDev_13,U1878,"Product is decent, but not worth the price.",Neutral
+Flipkart,AmitB_54,U1879,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Flipkart,RahulK_75,U1880,"It's fine for casual use, but not professional work.",Neutral
+Flipkart,KunalV_65,U1881,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Amazon,ArjunDev_97,U1882,Amazing product quality and quick delivery.,Positive
+Amazon,RohitP_53,U1883,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Flipkart,RahulK_67,U1884,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Amazon,RohitP_67,U1885,Poor build quality and slow performance.,Negative
+Amazon,AmitB_33,U1886,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Flipkart,RahulK_41,U1887,Very bad customer service experience.,Negative
+Flipkart,ArjunDev_57,U1888,The headphones have crystal clear sound and great bass.,Positive
+Amazon,SnehaM_63,U1889,"Design is nice, but functionality could be better.",Neutral
+Flipkart,SnehaM_66,U1890,"It's fine for casual use, but not professional work.",Neutral
+Flipkart,SimranK_41,U1891,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Amazon,MeeraJain_83,U1892,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Amazon,MeeraJain_96,U1893,"Design is nice, but functionality could be better.",Neutral
+Flipkart,SnehaM_50,U1894,Poor build quality and slow performance.,Negative
+Amazon,SnehaM_79,U1895,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Amazon,SnehaM_43,U1896,Amazing product quality and quick delivery.,Positive
+Amazon,AmitB_57,U1897,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Flipkart,KunalV_24,U1898,"Product is decent, but not worth the price.",Neutral
+Flipkart,PriyaS_92,U1899,Very bad customer service experience.,Negative
+Flipkart,RahulK_83,U1900,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Flipkart,Vinay_38,U1901,"Design is nice, but functionality could be better.",Neutral
+Flipkart,SnehaM_94,U1902,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Amazon,Vinay_48,U1903,Very bad customer service experience.,Negative
+Amazon,RahulK_61,U1904,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Amazon,Vinay_40,U1905,"It's fine for casual use, but not professional work.",Neutral
+Flipkart,SnehaM_94,U1906,Poor build quality and slow performance.,Negative
+Amazon,KunalV_58,U1907,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Flipkart,RahulK_92,U1908,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Amazon,MeeraJain_66,U1909,The product stopped working after a week.,Negative
+Amazon,Vinay_26,U1910,"Design is nice, but functionality could be better.",Neutral
+Flipkart,SimranK_78,U1911,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Flipkart,RahulK_17,U1912,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Flipkart,ArjunDev_96,U1913,"Design is nice, but functionality could be better.",Neutral
+Flipkart,MeeraJain_38,U1914,The headphones have crystal clear sound and great bass.,Positive
+Amazon,PriyaS_93,U1915,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Amazon,SimranK_97,U1916,"Performance is average, nothing exceptional.",Neutral
+Flipkart,AmitB_12,U1917,The product stopped working after a week.,Negative
+Amazon,SnehaM_79,U1918,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Amazon,SimranK_70,U1919,Very bad customer service experience.,Negative
+Amazon,KunalV_45,U1920,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Flipkart,AmitB_78,U1921,"It's fine for casual use, but not professional work.",Neutral
+Flipkart,KunalV_61,U1922,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Flipkart,SnehaM_93,U1923,The product stopped working after a week.,Negative
+Amazon,AmitB_24,U1924,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Flipkart,PriyaS_14,U1925,Very bad customer service experience.,Negative
+Amazon,RohitP_41,U1926,"It's fine for casual use, but not professional work.",Neutral
+Flipkart,KunalV_36,U1927,The product stopped working after a week.,Negative
+Amazon,SimranK_80,U1928,The product stopped working after a week.,Negative
+Flipkart,AmitB_33,U1929,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Amazon,Vinay_46,U1930,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Amazon,KunalV_19,U1931,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Amazon,RohitP_36,U1932,"Performance is average, nothing exceptional.",Neutral
+Amazon,ArjunDev_20,U1933,The product stopped working after a week.,Negative
+Amazon,KunalV_31,U1934,"Performance is average, nothing exceptional.",Neutral
+Flipkart,PriyaS_40,U1935,Poor build quality and slow performance.,Negative
+Amazon,SimranK_85,U1936,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Flipkart,RohitP_43,U1937,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Amazon,ArjunDev_49,U1938,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Flipkart,SnehaM_60,U1939,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Flipkart,Vinay_40,U1940,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Amazon,RohitP_44,U1941,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Amazon,MeeraJain_70,U1942,Very bad customer service experience.,Negative
+Flipkart,KunalV_37,U1943,"Design is nice, but functionality could be better.",Neutral
+Amazon,MeeraJain_37,U1944,Very bad customer service experience.,Negative
+Flipkart,PriyaS_58,U1945,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Flipkart,AmitB_91,U1946,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Flipkart,AmitB_87,U1947,"Performance is average, nothing exceptional.",Neutral
+Flipkart,SnehaM_97,U1948,"Design is nice, but functionality could be better.",Neutral
+Amazon,KunalV_67,U1949,"Design is nice, but functionality could be better.",Neutral
+Amazon,SnehaM_35,U1950,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Flipkart,RahulK_75,U1951,The headphones have crystal clear sound and great bass.,Positive
+Flipkart,Vinay_17,U1952,Amazing product quality and quick delivery.,Positive
+Flipkart,SnehaM_65,U1953,The headphones have crystal clear sound and great bass.,Positive
+Flipkart,SimranK_98,U1954,"Design is nice, but functionality could be better.",Neutral
+Flipkart,RohitP_49,U1955,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Flipkart,PriyaS_33,U1956,"Product is decent, but not worth the price.",Neutral
+Flipkart,SimranK_64,U1957,Poor build quality and slow performance.,Negative
+Flipkart,AmitB_53,U1958,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Amazon,RohitP_47,U1959,Amazing product quality and quick delivery.,Positive
+Flipkart,KunalV_28,U1960,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Amazon,ArjunDev_92,U1961,"Product is decent, but not worth the price.",Neutral
+Amazon,SimranK_21,U1962,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Amazon,RahulK_97,U1963,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Flipkart,Vinay_14,U1964,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Flipkart,SimranK_88,U1965,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Amazon,KunalV_49,U1966,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Flipkart,Vinay_36,U1967,"Performance is average, nothing exceptional.",Neutral
+Amazon,MeeraJain_95,U1968,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Flipkart,AmitB_95,U1969,"Performance is average, nothing exceptional.",Neutral
+Flipkart,AmitB_49,U1970,"Design is nice, but functionality could be better.",Neutral
+Flipkart,SnehaM_86,U1971,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Flipkart,KunalV_39,U1972,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Flipkart,SimranK_44,U1973,"Product is decent, but not worth the price.",Neutral
+Flipkart,ArjunDev_87,U1974,"Design is nice, but functionality could be better.",Neutral
+Flipkart,MeeraJain_95,U1975,Amazing product quality and quick delivery.,Positive
+Amazon,SimranK_41,U1976,"It's fine for casual use, but not professional work.",Neutral
+Amazon,RohitP_61,U1977,The product stopped working after a week.,Negative
+Flipkart,PriyaS_56,U1978,"Performance is average, nothing exceptional.",Neutral
+Flipkart,PriyaS_65,U1979,Amazing product quality and quick delivery.,Positive
+Flipkart,RahulK_33,U1980,Amazing product quality and quick delivery.,Positive
+Amazon,RahulK_48,U1981,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Amazon,ArjunDev_14,U1982,The headphones have crystal clear sound and great bass.,Positive
+Flipkart,SnehaM_32,U1983,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Flipkart,AmitB_10,U1984,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Flipkart,RahulK_63,U1985,"Product is decent, but not worth the price.",Neutral
+Amazon,KunalV_78,U1986,Amazing product quality and quick delivery.,Positive
+Amazon,KunalV_66,U1987,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Flipkart,Vinay_19,U1988,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Flipkart,KunalV_52,U1989,"Performance is average, nothing exceptional.",Neutral
+Amazon,MeeraJain_94,U1990,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Flipkart,MeeraJain_57,U1991,"The delivery was late, and the product packaging was slightly damaged.",Negative
+Amazon,AmitB_12,U1992,"The phone’s battery lasts all day, and the camera quality is amazing.",Positive
+Amazon,RahulK_70,U1993,Poor build quality and slow performance.,Negative
+Amazon,ArjunDev_50,U1994,"The headphones are okay, but the sound isn’t as clear as I expected.",Neutral
+Flipkart,SnehaM_31,U1995,"This smartwatch is stylish, lightweight, and tracks my fitness perfectly.",Positive
+Flipkart,Vinay_27,U1996,Poor build quality and slow performance.,Negative
+Amazon,MeeraJain_33,U1997,"The laptop overheats quickly and crashes often, very disappointing.",Negative
+Amazon,Vinay_82,U1998,"Product is decent, but not worth the price.",Neutral
+Flipkart,SimranK_37,U1999,"The laptop is fast, lightweight, and perfect for my work.",Positive
+Amazon,MeeraJain_14,U2000,The headphones have crystal clear sound and great bass.,Positive
