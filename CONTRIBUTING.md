@@ -224,7 +224,7 @@ refactor(pdf_generator): extract summary logic into helper function
       Returns:
           float: Polarity score between -1.0 (negative) and 1.0 (positive).
       """
-      return TextBlob(text).sentiment.polarity
+      return vader_analyzer.polarity_scores(text)["compound"]
   ```
 
 - Keep functions **focused** — one responsibility per function

@@ -10,7 +10,7 @@ This document gives new contributors a quick mental model of how BizInsight AI i
 flowchart TD
     A([User / Browser]) -->|Uploads CSV / asks questions| B[Streamlit UI\napp.py]
 
-    B -->|Raw review text| C[Sentiment Engine\nTextBlob]
+    B -->|Raw review text| C[Sentiment Engine\nVADER (NLTK)]
     B -->|Structured query| D[AI Assistant\nDeepSeek via OpenRouter]
     B -->|Read / write records| E[Data Layer\ndatabase.py · SQLite]
 
@@ -37,8 +37,8 @@ flowchart TD
 ### 1. Presentation — `app.py`
 The single entry point. Streamlit renders every page, widget, and chart here. It orchestrates all other layers: it calls the sentiment engine, queries the database, invokes the AI assistant, and passes data to the analytics helpers. If you want to change what users see or how they interact with the app, start here.
 
-### 2. Sentiment Engine — TextBlob
-Runs automatically when a CSV is uploaded. Each review string is passed through TextBlob's polarity scorer, which returns a score between −1 (very negative) and +1 (very positive). The result is stored alongside the original review in SQLite for later trend queries.
+### 2. Sentiment Engine — VADER (NLTK)
+Runs automatically when a CSV is uploaded. Each review string is passed through VADER's compound scorer (NLTK), which returns a score between −1 (very negative) and +1 (very positive). The result is stored alongside the original review in SQLite for later trend queries.
 
 ### 3. Analytics — Pandas, Matplotlib, Scikit-learn
 Three responsibilities live in this layer:
@@ -68,7 +68,7 @@ When a user asks a free-text question in the dashboard, `app.py` sends the quest
 ## Data Flow in Plain English
 
 1. A user uploads a CSV containing a `review` column.
-2. `app.py` reads each row and sends the text to TextBlob for sentiment scoring.
+2. `app.py` reads each row and sends the text to VADER for sentiment scoring.
 3. Scored records are written to SQLite via `database.py`.
 4. The dashboard reads back stored records to render trend charts and surface top issues.
 5. When the user types a question into the AI assistant, the app bundles relevant context from the database into a prompt and calls the DeepSeek API, then displays the response.
