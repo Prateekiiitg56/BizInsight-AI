@@ -78,13 +78,6 @@ def initialize_database():
                 raise
 
 
-def insert_feedback(review, sentiment, created_at):
-
-    # Handle None / NaN / empty reviews safely
-    if review is None or str(review).strip() == "":
-        raise ValueError("Review cannot be empty.")
-
-
 def save_chat_turn(session_id, human_msg, ai_msg):
     """Persist one conversation turn (human question + AI answer)."""
     with get_connection() as conn:

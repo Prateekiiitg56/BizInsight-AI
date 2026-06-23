@@ -344,12 +344,16 @@ with tabs[2]:
                 st.dataframe(df, use_container_width=True)
 
                 for _, row in df.iterrows():
-                    insert_feedback(
-                        row["review"],
-                        row["sentiment"],
-                        row["date"].strftime("%Y-%m-%d")
-                    )
-                    inserted_count += 1
+                    try:
+                        insert_feedback(
+                            row["review"],
+                            row["sentiment"],
+                            user_id=current_user["id"]
+                        )
+                        inserted_count += 1
+                    except Exception as e:
+                        logger.error(f"Failed to insert feedback: {e}")
+                        continue
                 if "review" not in df.columns:
                     st.error("CSV must contain a 'review' column.")
                 else:
