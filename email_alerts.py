@@ -55,16 +55,10 @@ BizInsight AI
             smtp.ehlo()
             smtp.starttls()
             smtp.ehlo()
-
-            smtp.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
-
-            smtp.send_message(msg)
-
-        logging.info(f"Alert email sent successfully to {receiver_email}")
+        logger.info(f"Alert email sent successfully to {receiver_email}")
 
         return True
 
     except Exception as e:
-        print("SMTP ERROR:", e)
-        logging.error(f"Failed to send email to {receiver_email}: {e}")
+        logger.error(f"SMTP ERROR: Failed to send email to {receiver_email}: {e}")
         return False
