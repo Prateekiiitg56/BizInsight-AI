@@ -9,7 +9,6 @@ load_dotenv()
 EMAIL_ADDRESS = os.getenv("EMAIL_ADDRESS")
 EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
