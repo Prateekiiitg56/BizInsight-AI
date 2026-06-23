@@ -38,9 +38,7 @@ from database import (
     insert_feedback,
     fetch_feedback,
     clear_data,
-    initialize_database
 )
-initialize_database()
 from database import insert_feedback, fetch_feedback, clear_data
 import smtplib
 from email.mime.text import MIMEText
