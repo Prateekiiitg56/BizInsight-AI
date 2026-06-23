@@ -59,7 +59,7 @@ BizInsight AI
 
             smtp.send_message(msg)
 
-        logging.info(f"Alert email sent successfully to {receiver_email}")
+        logger.info(f"Alert email sent successfully to {receiver_email}")
 
         return True
 
