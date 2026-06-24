@@ -32,6 +32,8 @@ def initialize_database():
             email TEXT NOT NULL UNIQUE,
             password_hash TEXT NOT NULL,
             role TEXT NOT NULL DEFAULT 'user',
+            workspace_type TEXT NOT NULL DEFAULT 'personal',
+            workspace_id TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
         """)
@@ -63,19 +65,20 @@ def initialize_database():
         """)
         conn.commit()
         # Workspace support
+        user_columns = [
+            row[1] for row in cursor.execute("PRAGMA table_info(users)").fetchall()
+        ]
+        feedback_columns = [
+            row[1] for row in cursor.execute("PRAGMA table_info(feedback)").fetchall()
+        ]
 
-        try:
+        if "workspace_type" not in user_columns:
             cursor.execute(
-                "ALTER TABLE feedback ADD COLUMN user_id INTEGER REFERENCES users(id)"
+                "ALTER TABLE users ADD COLUMN workspace_type TEXT NOT NULL DEFAULT 'personal'"
             )
-            conn.commit()
 
-        except sqlite3.OperationalError as e:
-            if "duplicate column name" in str(e).lower():
-                logger.info("user_id column already exists in feedback table")
-            else:
-                logger.exception("Unexpected database migration failure")
-                raise
+        if "workspace_id" not in user_columns:
+            cursor.execute("ALTER TABLE users ADD COLUMN workspace_id TEXT")
 
 
 def save_chat_turn(session_id, human_msg, ai_msg):
@@ -173,12 +176,15 @@ def create_user(
 
 
 def get_user_by_username(username):
+    username = (username or "").strip()
+    if not username:
+        return None
+
     try:
         with get_connection() as conn:
             cursor = conn.cursor()
 
-            cursor.execute(
-                """
+            select_query = """
                 SELECT
                     id,
                     username,
