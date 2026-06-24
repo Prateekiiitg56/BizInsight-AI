@@ -55,6 +55,9 @@ BizInsight AI
             smtp.starttls()
             smtp.ehlo()
 
+            if not EMAIL_ADDRESS or not EMAIL_PASSWORD:
+                logger.error("SMTP credentials are not configured. Cannot login.")
+                return False
             smtp.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
 
             smtp.send_message(msg)

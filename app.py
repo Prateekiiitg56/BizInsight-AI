@@ -1,4 +1,8 @@
 import os
+
+from dotenv import load_dotenv
+load_dotenv()
+
 import logging
 import hashlib
 import uuid
@@ -15,10 +19,17 @@ load_dotenv()
 logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger(__name__)
 
+
 import streamlit as st
 st.set_page_config(page_title="BizInsight AI", layout="wide")
-
+import pandas as pd
+import matplotlib.pyplot as plt
 from sklearn.feature_extraction.text import CountVectorizer
+
+from textblob import TextBlob
+from database import insert_feedback, fetch_feedback, clear_data
+from openai import OpenAI
+
 from database import insert_feedback, fetch_feedback, clear_data
 
 from openai import (
@@ -68,21 +79,33 @@ from database import (
 from auth import is_logged_in, get_current_user, logout, show_auth_page, show_setup_wizard
 from database import no_users_exist
 
-# ─── Initialize DB ────────────────────────────────────────────────────────────
 
-initialize_database()
+# ---------- Chimera AI Client ----------
 
-# ─── Auth Gate ────────────────────────────────────────────────────────────────
+api_key = os.getenv("OPENROUTER_API_KEY")
 
-if no_users_exist():
-    show_setup_wizard()
-    st.stop()
+if not api_key:
+    st.warning("OPENROUTER_API_KEY not found. AI Assistant features will be disabled.")
+    client = None
+else:
+    client = OpenAI(
+        api_key=api_key,
+        base_url="https://openrouter.ai/api/v1"
+    )
 
-if not is_logged_in():
-    show_auth_page()
-    st.stop()
+st.title("📊 BizInsight AI")
+st.caption("AI-powered customer intelligence platform for business growth")
 
-current_user = get_current_user()
+if "data_cleared" in st.session_state:
+    st.success("All data removed successfully.")
+    del st.session_state.data_cleared
+if "messages" not in st.session_state:
+    st.session_state.messages=[]
+
+tabs = st.tabs(["📊 Dashboard", "🤖 AI Assistant", "📂 Data Upload", "⚙ Controls"])
+
+
+# ================= FUNCTIONS =================
 
 # --- Email Alert State ---
 if "alert_email" not in st.session_state:
@@ -91,48 +114,80 @@ if "alert_email" not in st.session_state:
 
 # ─── OpenAI Client ───────────────────────────────────────────────────────────
 
-@st.cache_resource
-def get_ai_client():
-    api_key = os.getenv("OPENROUTER_API_KEY")
-    if not api_key:
-        return None
-    return OpenAI(api_key=api_key, base_url="https://openrouter.ai/api/v1")
-
-client = get_ai_client()
-
-# ─── Sidebar ──────────────────────────────────────────────────────────────────
-
-with st.sidebar:
-    st.markdown(f"👤 **{current_user['username']}**")
-    st.caption(f"Role: `{current_user['role']}`")
-    st.markdown("---")
-    if st.button("🚪 Logout", use_container_width=True):
-        logout()
-        st.rerun()
-
-# ─── Vader ────────────────────────────────────────────────────────────────────
-
-@st.cache_resource
-def load_vader_analyzer():
-    try:
-        nltk.data.find("sentiment/vader_lexicon.zip")
-    except LookupError:
-        nltk.download("vader_lexicon", quiet=True)
-    return SentimentIntensityAnalyzer()
-
-vader_analyzer = load_vader_analyzer()
-
-# ─── Tabs ─────────────────────────────────────────────────────────────────────
-
-if current_user["role"] == "admin":
-    tabs = st.tabs(["📊 Dashboard", "🤖 AI Assistant", "📂 Data Upload", "⚙ Controls", "👑 Admin"])
-else:
-    tabs = st.tabs(["📊 Dashboard", "🤖 AI Assistant", "📂 Data Upload", "⚙ Controls"])
-
-# ─── Helper Functions ─────────────────────────────────────────────────────────
 
 def get_sentiment(text):
-    return vader_analyzer.polarity_scores(text)['compound']
+    return TextBlob(text).sentiment.polarity
+
+
+# ================= AI ASSISTANT =================
+
+# ================= AI ASSISTANT =================
+
+with tabs[1]:
+
+    st.subheader("🤖 AI Business Assistant")
+
+    # Show previous messages
+
+    for message in st.session_state.messages:
+
+        with st.chat_message(message["role"]):
+            st.write(message["content"])
+    st.empty()
+
+    # Chat input at bottom
+
+    question = st.chat_input(
+        "Ask business insights question"
+    )
+    st.components.v1.html(
+    """
+    <script>
+        const input = parent.document.querySelector('textarea');
+        if (input) {
+            input.focus();
+        }
+    </script>
+    """,
+    height=0,
+)
+
+
+    if question:
+        with st.chat_message("user"):
+         st.write(question)
+
+        # Save user message
+        st.session_state.messages.append(
+            {
+                "role": "user",
+                "content": question
+            }
+        )
+
+        if client is None:
+            st.warning("AI features unavailable because API key is missing.")
+
+        else:
+
+            data = fetch_feedback()
+
+            if not data:
+                st.warning("No feedback data available.")
+
+            else:
+
+                df_ai = pd.DataFrame(
+                    data,
+                    columns=["review", "sentiment", "date"]
+                )
+
+                reviews_text = "\n".join(
+                    df_ai["review"].astype(str).tolist()
+                )
+
+                prompt = f"""
+You are a business intelligence assistant.
 
 def send_alert_email(recipient_email, subject, body):
     """Sends an email alert regarding sentiment spikes."""
@@ -174,6 +229,7 @@ def ask_ai(question, reviews):
     context = "\n".join(reviews[:40])
 
     prompt = f"""You are a business intelligence assistant.
+
 
 # ================= AI ASSISTANT =================
 
@@ -218,11 +274,48 @@ You are a business intelligence assistant.
 Analysing a sample of {len(sampled_reviews)} most recent reviews (out of {total_reviews_count} total).
 
 Customer reviews:
-{context}
+{reviews_text}
 
 Question:
 {question}
 """
+
+
+                try:
+
+                    response = client.chat.completions.create(
+                        model="openai/gpt-3.5-turbo",
+                        messages=[
+                            {
+                                "role": "system",
+                                "content": "You provide business intelligence insights."
+                            },
+                            {
+                                "role": "user",
+                                "content": prompt
+                            }
+                        ],
+                        temperature=0.4
+                    )
+
+                    answer = response.choices[0].message.content
+
+                    # Save assistant response
+
+                    st.session_state.messages.append(
+                        {
+                            "role": "assistant",
+                            "content": answer
+                        }
+                    )
+                    st.rerun()
+
+                    # Show assistant response
+
+                     
+
+                except Exception as e:
+                    st.error(f"Error generating AI response: {str(e)}")
 
     try:
         response = client.chat.completions.create(
@@ -295,16 +388,29 @@ def make_pdf(df, trend, keywords):
     buffer.seek(0)
     return buffer.read()
 
+
 # ================= DATA UPLOAD =================
 
 with tabs[2]:
+
     st.subheader("📂 Upload Customer Reviews")
-    uploaded_file = st.file_uploader("Upload CSV with review column", type="csv")
+
+    uploaded_file = st.file_uploader(
+        "Upload CSV with review column",
+        type="csv"
+    )
 
     if uploaded_file:
-        file_hash = hashlib.md5(uploaded_file.getvalue()).hexdigest()
 
         df = pd.read_csv(uploaded_file)
+
+
+        st.dataframe(df, use_container_width=True)
+
+        if "review" not in df.columns:
+            st.error("CSV must contain a 'review' column.")
+
+
         if "date" not in df.columns:
             st.error("CSV must contain a 'date' column.")
             st.stop()
@@ -377,10 +483,43 @@ with tabs[2]:
                                 f"Regards,\nThe BizInsight AI Team"
                             )
                             send_alert_email(st.session_state.alert_email, subject, body)
-        else:
-            st.info("This file has already been uploaded in this session.")
 
-# ─── Load Data ────────────────────────────────────────────────────────────────
+        else:
+
+            df = df.dropna(subset=["review"])
+
+            df["review"] = df["review"].astype(str).str.strip()
+            df = df[df["review"] != ""]
+
+
+            if df.empty:
+
+                st.warning("No valid reviews found after cleaning.")
+
+
+            else:
+
+                df["sentiment"] = df["review"].apply(get_sentiment)
+
+                inserted_count = 0
+
+                for _, row in df.iterrows():
+                    insert_feedback(row["review"], row["sentiment"])
+                    inserted_count += 1
+
+                st.success(f"{inserted_count} feedback entries successfully added!")
+
+# ================= FETCH DATA =================
+
+data = fetch_feedback()
+
+if data:
+
+    df = pd.DataFrame(
+        data,
+        columns=["review", "sentiment", "date"]
+    )
+
 
 if current_user["workspace_type"] == "corporate":
 
@@ -397,20 +536,34 @@ else:
 df = pd.DataFrame(data, columns=["review", "sentiment", "date"])
 
 if not df.empty:
+
     df["date"] = pd.to_datetime(df["date"])
+
+    # Sentiment Counts
 
     positive = (df["sentiment"] > 0).sum()
     negative = (df["sentiment"] < 0).sum()
-    neutral  = (df["sentiment"] == 0).sum()
+    neutral = (df["sentiment"] == 0).sum()
+
     total_reviews = len(df)
 
+    # Percentages
+
+
     # These are now safe from ZeroDivisionError because total_reviews > 0
+
     positive_percent = round((positive / total_reviews) * 100, 2)
     negative_percent = round((negative / total_reviews) * 100, 2)
-    neutral_percent  = round((neutral  / total_reviews) * 100, 2)
+    neutral_percent = round((neutral / total_reviews) * 100, 2)
+
+    # Trend
 
     # Existing sentiment trend
     trend = df.groupby(df["date"].dt.date)["sentiment"].mean()
+
+    # Keyword Extraction
+
+    # Keywords
 
     # =========================================
     # NEGATIVE REVIEW SPIKE DETECTION
@@ -439,47 +592,68 @@ if not df.empty:
 
     # =========================================
 
+
     reviews = df["review"].dropna()
 
     if reviews.empty or (
+
+        reviews.apply(lambda x: isinstance(x, str)).all() and
+        reviews.str.strip().eq("").all()
+
         reviews.apply(lambda x: isinstance(x, str)).all()
         and reviews.str.strip().eq("").all()
+
     ):
         keywords = []
         keyword_counts = []
 
     else:
+
+
+
+
         vectorizer = CountVectorizer(
             stop_words="english",
             max_features=10
         )
 
         try:
+
             X = vectorizer.fit_transform(reviews)
 
             keywords = vectorizer.get_feature_names_out()
 
             keyword_counts = X.toarray().sum(axis=0)
 
+
+
             keyword_df = pd.DataFrame({
                 "Keyword": keywords,
                 "Frequency": keyword_counts
             })
+
 
         except ValueError as e:
 
             if "empty vocabulary" in str(e).lower():
                 keywords = []
                 keyword_counts = []
+
             else:
                 raise
 
-    keyword_df = pd.DataFrame({"Keyword": keywords, "Frequency": keyword_counts})
+    keyword_df = pd.DataFrame({
+        "Keyword": keywords,
+        "Frequency": keyword_counts
+    })
 
-    # ─── Dashboard Tab ────────────────────────────────────────────────────────
+    # ================= DASHBOARD =================
 
     with tabs[0]:
+
         st.subheader("📈 Business Health Overview")
+
+
 
         if not anomalies.empty:
             st.error(
@@ -490,79 +664,49 @@ if not df.empty:
         c1.metric("Total Reviews", len(df))
         c2.metric("Positive", positive)
         c3.metric("Negative", negative)
+
         c1, c2, c3, c4 = st.columns(4)
+
         c1.metric("Total Reviews", total_reviews)
         c2.metric("Positive %", f"{positive_percent}%")
         c3.metric("Negative %", f"{negative_percent}%")
-        c4.metric("Neutral %",  f"{neutral_percent}%")
+        c4.metric("Neutral %", f"{neutral_percent}%")
 
         st.markdown("---")
-        st.subheader("🔍 Smart Review Clustering")
-        embedding_model = load_model()
 
-        cluster_mode = st.radio(
-            "Cluster by sentiment:",
-            options=["Negative", "Positive"],
-            horizontal=True,
-            help="Negative: surfaces complaint themes. Positive: surfaces what customers love."
-        )
+        # Trend Chart
 
-        button_label = "Find Complaint Clusters" if cluster_mode == "Negative" else "Find Positive Themes"
 
-        if st.button(button_label):
-            if cluster_mode == "Negative":
-                selected_reviews = df[df["sentiment"] < 0]["review"].tolist()
-                spinner_text = "Clustering negative reviews..."
-                empty_warning = f"Only {len(selected_reviews)} negative reviews. Need at least 10."
-                success_label = "complaints"
-                icon = "📌"
-                mode_arg = "negative"
-            else:
-                selected_reviews = df[df["sentiment"] > 0]["review"].tolist()
-                spinner_text = "Clustering positive reviews..."
-                empty_warning = f"Only {len(selected_reviews)} positive reviews. Need at least 10."
-                success_label = "positive themes"
-                icon = "⭐"
-                mode_arg = "positive"
+        col1, col2 = st.columns([2,1])
 
-            with st.spinner(spinner_text):
-                if len(selected_reviews) < 10:
-                    st.warning(empty_warning)
-                else:
-                    dynamic_min_topic_size = max(3, len(selected_reviews) // 5)
-                    result = run_pipeline(
-                        selected_reviews,
-                        embedding_model,
-                        min_topic_size=dynamic_min_topic_size,
-                        similarity_threshold=0.4,
-                        verbose=True,
-                        mode=mode_arg
-                    )
-                    if result["success"]:
-                        st.success(f"✅ Found {result['n_clusters']} {success_label} from {result['total_negative_reviews']} reviews")
-                        for cluster in result["clusters"]:
-                            with st.expander(f"{icon} {cluster['name']} ({cluster['percentage']:.1f}%) - {cluster['count']} reviews"):
-                                st.write("**Example reviews:**")
-                                for ex in cluster.get('example_reviews', [])[:3]:
-                                    st.write(f"- \"{ex}\"")
-                    else:
-                        st.error(result["message"])
-
-        st.markdown("---")
-        col1, col2 = st.columns([2, 1])
         with col1:
+
             st.subheader("Customer Satisfaction Trend")
             st.area_chart(trend)
+
         with col2:
 
-            fig3, ax3 = plt.subplots(figsize=(3.2, 3.2))
+
 
             fig3, ax3 = plt.subplots(figsize=(3.2, 3.2))
+
+
+            fig3, ax3 = plt.subplots(figsize=(3.2, 3.2))
+
+
             ax3.pie(
                 [positive, negative, neutral],
                 labels=["Positive", "Negative", "Neutral"],
                 autopct="%1.1f%%"
             )
+
+
+            st.pyplot(fig3)
+            plt.close(fig3)
+
+            st.markdown("---")
+
+        # Histogram
 
             st.pyplot(fig3)
             plt.close(fig3)
@@ -726,29 +870,33 @@ if not df.empty:
         pdf_file = make_pdf(df, trend, list(keywords))
         st.download_button("Download PDF Report", pdf_file, file_name="report.pdf", mime="application/pdf")
 
+
         st.subheader("📊 Sentiment Score Distribution")
+
         col_small, _ = st.columns([1.5, 4])
+
         with col_small:
+
             fig2, ax2 = plt.subplots(figsize=(2.8, 2.1))
+
             ax2.hist(df["sentiment"], bins=10)
+
             ax2.set_xlabel("Score", fontsize=8)
             ax2.set_ylabel("Freq", fontsize=8)
+
             ax2.tick_params(axis='both', labelsize=7)
+
             st.pyplot(fig2)
-            plt.close(fig2)
 
         # Keywords
 
         st.markdown("---")
-        csv_data = df.to_csv(index=False).encode("utf-8")
-        st.download_button(
-            label="⬇️ Download Feedback as CSV",
-            data=csv_data,
-            file_name="bizinsight_feedback.csv",
-            mime="text/csv"
-        )
+
+        # Keywords
 
         st.subheader("Top Customer Issues / Keywords")
+
+
 
     # ================= DYNAMIC KEYWORD EXTRACTION & FILTERING =================
         col_filter, _ = st.columns([1, 3])
@@ -793,26 +941,16 @@ if not df.empty:
     
         st.dataframe(keyword_df, use_container_width=True)
 
-    # ─── AI Assistant Tab ─────────────────────────────────────────────────────
 
-    with tabs[1]:
-        st.subheader("🤖 AI Business Assistant")
-        question = st.text_area("Ask a business insights question",
-                                placeholder="Example: What are the major customer complaints?")
-        if st.button("Generate AI Insight"):
-            if client is None:
-                st.warning("AI features unavailable because API key is missing.")
-            elif question.strip() == "":
-                st.warning("Please enter a question.")
-            else:
-                with st.spinner("Analyzing..."):
-                    answer = ask_ai(question, df["review"].tolist())
-                    st.success("AI Insight Generated")
-                    st.write(answer)
+        st.dataframe(keyword_df, use_container_width=True)
 
-    # ─── Controls Tab ─────────────────────────────────────────────────────────
+    # ================= CONTROLS =================
 
     with tabs[3]:
+
+
+        st.subheader("⚙ System Controls")
+
         st.subheader("⚙ System Controls")
         
         st.markdown("---")
@@ -850,39 +988,23 @@ if not df.empty:
 #else:
 #    st.info("Upload feedback to start building insights.")
 
-# ─── Admin Tab ────────────────────────────────────────────────────────────────
 
-if current_user["role"] == "admin":
-    with tabs[4]:
-        st.subheader("👑 Admin Panel")
-        st.markdown("### Registered Users")
-        users = fetch_all_users()
+        if st.button("🗑 Clear all stored feedback"):
 
-        if not users:
-            st.info("No users found.")
-        else:
-            for user in users:
-                user_id, username, role, created_at, review_count = user
-                col1, col2, col3, col4, col5 = st.columns([2, 1, 2, 1, 1])
-                col1.write(f"**{username}**")
-                col2.write(f"`{role}`")
-                col3.write(created_at)
-                col4.write(f"{review_count} reviews")
+            clear_data()
 
-                if user_id != current_user["id"]:
-                    if col5.button("🗑️ Delete", key=f"del_user_{user_id}"):
-                        delete_user(user_id)
-                        st.success(f"User '{username}' and their data deleted.")
-                        st.rerun()
-                else:
-                    col5.write("_(you)_")
+            st.session_state.data_cleared = True
+            st.rerun()
 
-        st.markdown("---")
-        st.markdown("### All Feedback Across Users")
-        all_feedback = fetch_all_feedback()
+        st.warning("This action cannot be undone.")
+
+
+else:
+    st.info("Upload feedback to start building insights.")
 
         if not all_feedback:
             st.info("No feedback in the system yet.")
         else:
             df_all = pd.DataFrame(all_feedback, columns=["review", "sentiment", "date", "uploaded_by"])
             st.dataframe(df_all, use_container_width=True)
+
