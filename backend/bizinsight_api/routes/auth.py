@@ -145,14 +145,14 @@ def google_auth(req: GoogleAuthRequest):
     from google.oauth2 import id_token as google_id_token
     from google.auth.transport import requests as google_requests
 
-    GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
+    GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID") or os.getenv("NEXT_PUBLIC_GOOGLE_CLIENT_ID") or None
 
     try:
         # Verify the Google ID token
         idinfo = google_id_token.verify_oauth2_token(
             req.id_token,
             google_requests.Request(),
-            GOOGLE_CLIENT_ID,
+            audience=GOOGLE_CLIENT_ID if GOOGLE_CLIENT_ID else None,
         )
 
         # Extract user info from verified token

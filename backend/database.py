@@ -157,7 +157,7 @@ def get_user_by_email(email):
                 """
                 SELECT id, username, email, password_hash, role
                 FROM users
-                WHERE email = ?
+                WHERE LOWER(email) = LOWER(?)
                 """,
                 (email.strip(),)
             )
