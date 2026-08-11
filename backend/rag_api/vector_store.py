@@ -47,18 +47,19 @@ class VectorStoreManager:
         )
     
     # The add_documents method allows us to add new documents to the vector store. It first clears existing documents to avoid duplicates, then prepares the new documents in the required format and adds them to ChromaDB. 
-    def add_documents(self, documents: List[Dict[str, Any]]):
+    def add_documents(self, documents: List[Dict[str, Any]], clear_existing: bool = False):
         """Add documents to the vector store."""
         from langchain_core.documents import Document
         
-        # 1. Clear existing documents so we don't get duplicates on re-upload
-        try:
-            existing_data = self.vectorstore.get()
-            if existing_data and existing_data["ids"]:
-                self.vectorstore.delete(ids=existing_data["ids"])
-                logger.info(f"Cleared {len(existing_data['ids'])} old documents.")
-        except Exception as e:
-            logger.warning(f"Could not clear old documents: {e}")
+        # Only clear existing documents if explicitly requested
+        if clear_existing:
+            try:
+                existing_data = self.vectorstore.get()
+                if existing_data and existing_data["ids"]:
+                    self.vectorstore.delete(ids=existing_data["ids"])
+                    logger.info(f"Cleared {len(existing_data['ids'])} old documents.")
+            except Exception as e:
+                logger.warning(f"Could not clear old documents: {e}")
 
         # 2. Prepare the new documents in the format required by ChromaDB, which includes page_content, metadata, and an optional ID. 
         docs = [

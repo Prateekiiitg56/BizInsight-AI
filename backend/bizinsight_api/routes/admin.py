@@ -58,6 +58,12 @@ def clear_my_data(current_user: dict = Depends(get_current_user)):
     """Clear all feedback data for the current user."""
     try:
         clear_data(user_id=current_user["id"])
+        try:
+            from rag_api.api import get_chain_manager
+            cm = get_chain_manager()
+            cm.vector_store_manager.delete_collection()
+        except Exception as e:
+            print(f"ChromaDB clear collection skipped: {e}")
         return {"status": "success", "message": "All your review data has been removed."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

@@ -79,6 +79,21 @@ async def upload_reviews(
     reviews_data = list(zip(df["review"], df["sentiment"]))
     insert_feedback_bulk(reviews_data, user_id=current_user["id"])
 
+    # Auto-sync to RAG vector memory without erasing earlier reviews
+    try:
+        from rag_api.api import get_chain_manager
+        cm = get_chain_manager()
+        doc_objs = [
+            {
+                "page_content": row[0],
+                "metadata": {"sentiment": float(row[1]), "user_id": current_user["id"]},
+            }
+            for row in reviews_data
+        ]
+        cm.vector_store_manager.add_documents(doc_objs, clear_existing=False)
+    except Exception as e:
+        print(f"ChromaDB auto-sync skipped: {e}")
+
     # Summary
     positive = int((df["sentiment"] > 0).sum())
     negative = int((df["sentiment"] < 0).sum())
