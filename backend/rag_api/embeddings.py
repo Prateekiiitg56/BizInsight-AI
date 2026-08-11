@@ -28,14 +28,14 @@ class LightweightEmbeddings:
         if not texts:
             return []
         if self._type == "fastembed":
-            return [list(e) for e in self._model.embed(texts)]
+            return [[float(x) for x in e] for e in self._model.embed(texts)]
         import numpy as np
         X = self._vectorizer.fit_transform(texts).toarray()
         if X.shape[1] < 384:
             X = np.pad(X, ((0,0), (0, 384 - X.shape[1])))
         norms = np.linalg.norm(X, axis=1, keepdims=True)
         norms[norms == 0] = 1.0
-        return (X / norms).tolist()
+        return [[float(x) for x in row] for row in (X / norms)]
 
     def embed_query(self, text: str) -> list:
         return self.embed_documents([text])[0] if text else [0.0] * 384
