@@ -119,8 +119,22 @@ def list_reviews(
 
 
 @router.get("/export")
-def export_csv(current_user: dict = Depends(get_current_user)):
-    """Stream processed reviews as a CSV file download."""
+def export_csv(token: str = Query(..., description="JWT token passed as query param for browser download")):
+    """Stream processed reviews as a CSV file download.
+    
+    Uses query-param token instead of Authorization header because
+    window.open() in the browser cannot set custom headers.
+    """
+    import jwt as pyjwt
+    JWT_SECRET = os.getenv("JWT_SECRET", "bizinsight-dev-secret-change-in-production")
+    try:
+        payload = pyjwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+        current_user = {"id": payload["user_id"], "username": payload["username"], "role": payload["role"]}
+    except pyjwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token has expired. Please log in again.")
+    except pyjwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token.")
+
     data = fetch_feedback(user_id=current_user["id"])
 
     if not data:
