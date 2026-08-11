@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api-client";
-import { Upload, RefreshCw } from "lucide-react";
+import { Upload, RefreshCw, AlertCircle } from "lucide-react";
 
 const fallbackData = {
   total_reviews: 2340, positive_count: 1420, negative_count: 610, neutral_count: 310,
@@ -84,9 +84,37 @@ export default function DashboardHome() {
     }
   };
 
-  const handleExport = () => {
+  const [exportError, setExportError] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
+
+  const handleExport = async () => {
     const token = localStorage.getItem("bizinsight_token");
-    if (token) window.open(api.getExportUrl(token), "_blank");
+    if (!token) return;
+    setExportError(null);
+    setExporting(true);
+    try {
+      const res = await fetch(api.getExportUrl(token));
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        setExportError(err.detail || "Export failed. Please try again.");
+        setTimeout(() => setExportError(null), 5000);
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "bizinsight_feedback.csv";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      setExportError("Network error. Could not reach the server.");
+      setTimeout(() => setExportError(null), 5000);
+    } finally {
+      setExporting(false);
+    }
   };
 
   if (loading) {
@@ -106,9 +134,34 @@ export default function DashboardHome() {
           <Link href="/dashboard/upload" className="text-sm font-medium px-4 py-2 rounded-lg bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:opacity-90 transition-opacity flex items-center gap-1.5">
             <Upload size={14} /> Import CSV
           </Link>
-          <button onClick={handleExport} className="text-sm font-medium px-4 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors">Export report</button>
+          <button onClick={handleExport} disabled={exporting} className="text-sm font-medium px-4 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors flex items-center gap-1.5 disabled:opacity-50">
+            {exporting && <RefreshCw className="animate-spin text-zinc-400" size={14} />}
+            {exporting ? "Exporting..." : "Export report"}
+          </button>
         </div>
       </div>
+
+      {exportError && (
+        <div className="mb-6 p-4 rounded-xl border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 flex items-center justify-between gap-4 animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 flex items-center justify-center shrink-0">
+              <AlertCircle size={18} />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-red-900 dark:text-red-200">{exportError}</p>
+              <p className="text-xs text-red-600/80 dark:text-red-400/80 mt-0.5">You need to upload at least one CSV dataset before generating reports.</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <Link href="/dashboard/upload" className="text-xs font-medium px-3 py-1.5 rounded-lg bg-red-600 dark:bg-red-500 text-white hover:opacity-90 transition-opacity">
+              Upload Reviews
+            </Link>
+            <button onClick={() => setExportError(null)} className="text-xs text-red-500 hover:text-red-700 dark:hover:text-red-300 px-2 py-1">
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Metrics: matches reference exactly */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
