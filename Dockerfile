@@ -15,9 +15,6 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Copy backend application code into WORKDIR
 COPY backend/ .
 
-# Run model pre-download if needed
-RUN python download_model.py || true
-
 # Set default port (Google Cloud Run passes PORT=8080)
 ENV PORT=8080
 ENV ALLOW_ALL_ORIGINS=true

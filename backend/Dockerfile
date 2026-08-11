@@ -15,14 +15,11 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Copy application code
 COPY . .
 
-# Run model pre-download if needed
-RUN python download_model.py || true
-
-# Set default port (Hugging Face default is 7860, Cloud Run uses 8080 or PORT env var)
-ENV PORT=7860
+# Set default port (Google Cloud Run passes PORT=8080)
+ENV PORT=8080
 ENV ALLOW_ALL_ORIGINS=true
 ENV DISABLE_BERT=true
 
-EXPOSE 7860
+EXPOSE 8080
 
-CMD ["sh", "-c", "uvicorn bizinsight_api.main:app --host 0.0.0.0 --port ${PORT:-7860}"]
+CMD ["sh", "-c", "uvicorn bizinsight_api.main:app --host 0.0.0.0 --port ${PORT:-8080}"]
