@@ -1,4 +1,5 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
+const rawBaseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
+const API_BASE_URL = rawBaseUrl.replace(/\/+$/, "");
 
 interface FetchOptions extends RequestInit {
   token?: string | null;

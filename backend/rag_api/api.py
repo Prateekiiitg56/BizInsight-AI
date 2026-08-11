@@ -12,10 +12,12 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(title="BizInsight RAG API", version="1.0.0")
 
-# CORS setup to allow Streamlit frontend to communicate with this API
+import os
+
+# CORS setup to allow Vercel and Streamlit frontends to communicate with this API
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:8501", "http://localhost:8502"],
+    allow_origins=["*"] if os.getenv("ALLOW_ALL_ORIGINS", "true").lower() == "true" else ["http://localhost:3000", "http://localhost:8501", os.getenv("FRONTEND_URL", "*")],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
