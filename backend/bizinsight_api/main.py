@@ -78,9 +78,14 @@ app.mount("/api/rag", rag_app)
 
 # ─── Root Health Check ────────────────────────────────────────────────────────
 
+@app.get("/")
+def root():
+    return {"status": "ok", "service": "bizinsight-api", "version": "2.0.0", "docs": "/docs"}
+
 @app.get("/api/health")
 def health():
     return {"status": "ok", "service": "bizinsight-api", "version": "2.0.0"}
+
 
 
 # ─── Run Directly ─────────────────────────────────────────────────────────────
