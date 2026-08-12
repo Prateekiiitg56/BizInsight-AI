@@ -74,6 +74,9 @@ desktop.ini
 
 # AI Models and Cache
 models/finetuned_complaint_model_final/
+.cache/
+*.cache/
+*.onnx
 .ipynb_checkpoints
 .pytest_cache/
 .eslintcache

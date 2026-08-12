@@ -60,7 +60,11 @@ class RAGChainManager:
             model_name=RAGConfig.LLM_MODEL,
             temperature=RAGConfig.LLM_TEMPERATURE,
             max_tokens=RAGConfig.LLM_MAX_TOKENS,
-            max_retries=4
+            max_retries=2,
+            default_headers={
+                "HTTP-Referer": "https://bizinsight-ai.com",
+                "X-Title": "BizInsight AI",
+            }
         )
 
         self._qa_chain = None

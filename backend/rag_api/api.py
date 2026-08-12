@@ -191,14 +191,13 @@ def chat(request: ChatRequest):
             )
             
         except Exception as e:
-            logger.warning(f"LLM Call failed on attempt {attempt + 1}: {str(e)}")
+            logger.exception(f"LLM Call failed on attempt {attempt + 1}: {str(e)}")
             
-            # Implementing exponential backoff before retrying the LLM call. This helps to mitigate issues with rate limits or temporary instability of the LLM provider. The wait time doubles with each attempt (2 seconds, 4 seconds, 8 seconds, etc.).
-            if attempt == max_retries - 1: # If we've exhausted all retry attempts, we log the error and return a 502 Bad Gateway response indicating that the AI provider is currently unstable.
-                logger.error("All retry attempts exhausted.")
+            if attempt == max_retries - 1:
+                logger.error(f"All retry attempts exhausted: {str(e)}")
                 raise HTTPException(
                     status_code=502, 
-                    detail="The AI provider is currently unstable. Please try sending your message again."
+                    detail=f"AI Provider Error: {str(e)}"
                 )
             
             # Wait before retrying (exponential backoff)
