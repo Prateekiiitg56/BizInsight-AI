@@ -21,6 +21,7 @@ class LightweightEmbeddings:
             self._type = "fastembed"
         except Exception as e:
             logger.warning(f"FastEmbed fallback to TF-IDF vectorizer ({e})")
+            self._type = "tfidf"
             from sklearn.feature_extraction.text import TfidfVectorizer
             self._vectorizer = TfidfVectorizer(max_features=384)
 
