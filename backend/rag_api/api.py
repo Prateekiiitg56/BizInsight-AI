@@ -101,7 +101,7 @@ def chat(request: ChatRequest):
         print("🚦 ROUTER: Positive intent detected. Filtering for sentiment > 0")
     
     # Bypassing LLM call if API Key is not set, enabling full offline/keyless demo functionality
-    if RAGConfig.OPENROUTER_API_KEY == "NO_KEY_PROVIDED":
+    if RAGConfig.get_api_key() == "NO_KEY_PROVIDED":
         # Get base retriever and retrieve related reviews directly
         base_retriever = cm.vector_store_manager.get_retriever(search_filter=search_filter)
         docs = base_retriever.invoke(request.question)

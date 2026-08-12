@@ -55,7 +55,7 @@ class RAGChainManager:
         
         # Initialize the LLM (Language Model) using ChatOpenAI, configured with the model name, API key, temperature, max tokens, and retry settings defined in RAGConfig. This LLM will be used to generate answers based on the retrieved documents and the custom prompt.
         self.llm = ChatOpenAI(
-            openai_api_key=RAGConfig.OPENROUTER_API_KEY,
+            openai_api_key=RAGConfig.get_api_key(),
             openai_api_base=RAGConfig.LLM_BASE_URL,
             model_name=RAGConfig.LLM_MODEL,
             temperature=RAGConfig.LLM_TEMPERATURE,

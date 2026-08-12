@@ -20,10 +20,18 @@ class RAGConfig:
     
     # LLM configuration
     LLM_MODEL = "google/gemini-2.5-flash"
-    OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
-    if not OPENROUTER_API_KEY:
-        # Fallback placeholder to prevent startup crash
-        OPENROUTER_API_KEY = "NO_KEY_PROVIDED"
+    
+    @classmethod
+    def get_api_key(cls):
+        key = os.getenv("OPENROUTER_API_KEY") or os.getenv("OPENROUTER_KEY")
+        if not key or not key.strip():
+            return "NO_KEY_PROVIDED"
+        return key.strip()
+
+    @property
+    def OPENROUTER_API_KEY(self):
+        return self.get_api_key()
+
     LLM_BASE_URL = "https://openrouter.ai/api/v1"
     LLM_TEMPERATURE = 0.3 # Lower temperature for more focused and deterministic answers, especially since we're relying on retrieved documents for context.
     LLM_MAX_TOKENS = 768  # Increased from 512 to allow room for structured output format
