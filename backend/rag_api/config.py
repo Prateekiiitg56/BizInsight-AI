@@ -22,8 +22,8 @@ class RAGConfig:
     TOP_K = 5  # Reduced from 15 — fewer, higher-quality docs prevent duplicate flooding
     SEARCH_TYPE = "similarity" 
     
-    # LLM configuration (Valid OpenRouter model slug)
-    LLM_MODEL = os.getenv("LLM_MODEL", "google/gemini-2.0-flash-001")
+    # LLM configuration (Verified 200 OK OpenRouter model slug)
+    LLM_MODEL = os.getenv("LLM_MODEL", "openai/gpt-4o-mini")
     
     @classmethod
     def get_api_key(cls):
