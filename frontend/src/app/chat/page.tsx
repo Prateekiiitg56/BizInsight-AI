@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import ReactMarkdown from "react-markdown";
 import { api } from "@/lib/api-client";
 import { Send, Bot, User, Layers, ChevronDown, ChevronUp, RefreshCw, ArrowLeft, MessageSquare, Sparkles } from "lucide-react";
 
@@ -80,7 +81,15 @@ export default function PublicChatPage() {
                     {m.role === "user" ? <User size={14} /> : <Bot size={14} />}
                   </div>
                   <div className="space-y-2">
-                    <div className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${m.role === "user" ? "bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-tr-sm" : "bg-zinc-100 dark:bg-zinc-800 rounded-tl-sm"}`}>{m.content}</div>
+                    <div className={`px-4 py-3 rounded-2xl text-sm leading-relaxed ${m.role === "user" ? "bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-tr-sm" : "bg-zinc-100 dark:bg-zinc-800 rounded-tl-sm text-zinc-900 dark:text-zinc-100"}`}>
+                      {m.role === "user" ? (
+                        m.content
+                      ) : (
+                        <div className="prose dark:prose-invert max-w-none text-sm space-y-2 [&_h2]:text-base [&_h2]:font-bold [&_h2]:mt-3 [&_h2]:mb-1 [&_h2]:tracking-tight [&_ul]:list-disc [&_ul]:pl-4 [&_li]:mt-1.5 [&_p]:mb-2 leading-relaxed">
+                          <ReactMarkdown>{m.content}</ReactMarkdown>
+                        </div>
+                      )}
+                    </div>
                     {m.sources && m.sources.length > 0 && (
                       <div>
                         <button onClick={() => setExpandedIdx(expandedIdx === i ? null : i)} className="flex items-center gap-1 text-[10px] text-zinc-400 hover:text-zinc-600">
