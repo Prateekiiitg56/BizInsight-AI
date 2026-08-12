@@ -17,19 +17,28 @@ class LightweightEmbeddings:
         try:
             from fastembed import TextEmbedding
             logger.info("Initializing FastEmbed (ONNX Runtime) embedding engine...")
-            self._model = TextEmbedding(model_name="BAAI/bge-small-en-v1.5")
+            cache_dir = os.getenv("FASTEMBED_CACHE_PATH", "./.cache/fastembed")
+            self._model = TextEmbedding(model_name="BAAI/bge-small-en-v1.5", cache_dir=cache_dir)
             self._type = "fastembed"
-        except Exception as e:
-            logger.warning(f"FastEmbed fallback to TF-IDF vectorizer ({e})")
-            self._type = "tfidf"
-            from sklearn.feature_extraction.text import TfidfVectorizer
-            self._vectorizer = TfidfVectorizer(max_features=384)
+        except Exception as e1:
+            try:
+                logger.warning(f"FastEmbed failed ({e1}), falling back to HuggingFaceEmbeddings (all-MiniLM-L6-v2)...")
+                from langchain_huggingface import HuggingFaceEmbeddings
+                self._model = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+                self._type = "hf"
+            except Exception as e2:
+                logger.warning(f"HuggingFaceEmbeddings fallback to TF-IDF vectorizer ({e2})")
+                self._type = "tfidf"
+                from sklearn.feature_extraction.text import TfidfVectorizer
+                self._vectorizer = TfidfVectorizer(max_features=384)
 
     def embed_documents(self, texts: list) -> list:
         if not texts:
             return []
         if self._type == "fastembed":
             return [[float(x) for x in e] for e in self._model.embed(texts)]
+        if self._type == "hf":
+            return self._model.embed_documents(texts)
         import numpy as np
         X = self._vectorizer.fit_transform(texts).toarray()
         if X.shape[1] < 384:
