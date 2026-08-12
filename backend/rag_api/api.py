@@ -28,9 +28,11 @@ _chain_manager = None
 
 def get_chain_manager():
     global _chain_manager
-    if _chain_manager is None:
-        logger.info("Initializing RAGChainManager on demand...")
+    current_key = RAGConfig.get_api_key()
+    if _chain_manager is None or (getattr(_chain_manager, "_cached_key", None) != current_key):
+        logger.info(f"Initializing RAGChainManager on demand (key status: {'SET' if current_key != 'NO_KEY_PROVIDED' else 'UNSET'})...")
         _chain_manager = RAGChainManager()
+        _chain_manager._cached_key = current_key
     return _chain_manager
 
 # Define request and response models for better type checking and documentation
@@ -72,8 +74,13 @@ def chat(request: ChatRequest):
     max_retries = 4  # Number of retry attempts for LLM calls in case of failure, with exponential backoff
     cm = get_chain_manager()
 
-    key_status = "DETECTED" if RAGConfig.get_api_key() != "NO_KEY_PROVIDED" else "NOT_FOUND"
+    active_key = RAGConfig.get_api_key()
+    key_status = "DETECTED" if active_key != "NO_KEY_PROVIDED" else "NOT_FOUND"
     logger.info(f"Received chat request: '{request.question}'. API Key status: {key_status}")
+
+    # Ensure LLM has current active key
+    if hasattr(cm, "llm") and hasattr(cm.llm, "openai_api_key"):
+        cm.llm.openai_api_key = active_key
 
     # --- SMART METADATA ROUTER ---
     question_lower = request.question.lower()
@@ -104,10 +111,16 @@ def chat(request: ChatRequest):
         print("🚦 ROUTER: Positive intent detected. Filtering for sentiment > 0")
     
     # Bypassing LLM call if API Key is not set, enabling full offline/keyless demo functionality
-    if RAGConfig.get_api_key() == "NO_KEY_PROVIDED":
+    if active_key == "NO_KEY_PROVIDED":
         # Get base retriever and retrieve related reviews directly
         base_retriever = cm.vector_store_manager.get_retriever(search_filter=search_filter)
         docs = base_retriever.invoke(request.question)
+        
+        # If filter yielded no results, retry without filter
+        if not docs and search_filter:
+            base_retriever = cm.vector_store_manager.get_retriever(search_filter=None)
+            docs = base_retriever.invoke(request.question)
+
         sources = [doc.page_content for doc in docs]
         
         # Deduplicate sources while preserving order
@@ -145,11 +158,25 @@ def chat(request: ChatRequest):
                 result = chain.invoke({"question": request.question})
                 answer = result.get("answer", "")
                 sources = [doc.page_content for doc in result.get("source_documents", [])]
+
+                # Fallback if sentiment filter yielded no documents
+                if not sources and search_filter:
+                    chain_fallback = cm.get_conversational_chain(request.session_id, search_filter=None)
+                    result = chain_fallback.invoke({"question": request.question})
+                    answer = result.get("answer", "")
+                    sources = [doc.page_content for doc in result.get("source_documents", [])]
             else:
                 chain = cm.get_qa_chain(search_filter=search_filter)
                 result = chain.invoke({"query": request.question})
                 answer = result.get("result", result.get("answer", ""))
                 sources = [doc.page_content for doc in result.get("source_documents", [])]
+
+                # Fallback if sentiment filter yielded no documents
+                if not sources and search_filter:
+                    chain_fallback = cm.get_qa_chain(search_filter=None)
+                    result = chain_fallback.invoke({"query": request.question})
+                    answer = result.get("result", result.get("answer", ""))
+                    sources = [doc.page_content for doc in result.get("source_documents", [])]
 
             # Debug logs to inspect the raw AI result and the retrieved sources, which can help in understanding how the smart metadata router is influencing the results.
             if request.use_memory and request.session_id:
