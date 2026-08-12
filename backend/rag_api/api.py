@@ -76,13 +76,27 @@ def chat(request: ChatRequest):
     question_lower = request.question.lower()
     search_filter = None
 
+    # Expanded keyword lists for better sentiment intent detection
+    negative_words = [
+        "issue", "problem", "bad", "complaint", "wrong", "broken",
+        "negative", "worst", "terrible", "horrible", "hate", "angry",
+        "disappointed", "frustrating", "slow", "delay", "late", "bug",
+        "crash", "error", "fail", "refund", "damage", "poor", "awful"
+    ]
+    positive_words = [
+        "good", "great", "best", "love", "awesome", "perfect",
+        "positive", "happy", "excellent", "amazing", "fast",
+        "helpful", "recommend", "satisfied", "impressed", "premium",
+        "outstanding", "fantastic", "wonderful"
+    ]
+
     # If they ask about negative things, only filter for negative reviews in ChromaDB. 
-    if any(word in question_lower for word in ["issue", "problem", "bad", "complaint", "wrong", "broken"]):
+    if any(word in question_lower for word in negative_words):
         search_filter = {"sentiment": {"$lt": 0}}
         print("🚦 ROUTER: Negative intent detected. Filtering for sentiment < 0")
         
     # If they ask about positive things, only filter for positive reviews in ChromaDB.
-    elif any(word in question_lower for word in ["good", "great", "best", "love", "awesome", "perfect"]):
+    elif any(word in question_lower for word in positive_words):
         search_filter = {"sentiment": {"$gt": 0}}
         print("🚦 ROUTER: Positive intent detected. Filtering for sentiment > 0")
     
@@ -93,26 +107,30 @@ def chat(request: ChatRequest):
         docs = base_retriever.invoke(request.question)
         sources = [doc.page_content for doc in docs]
         
-        # Build a helpful simulated response summarizing matched customer reviews
-        if not sources:
-            sources = [
-                "Shipping delay: Package arrived 4 days late with no tracking update.",
-                "Technical issue: App crashes on Android when accessing checkout screen.",
-                "Great service: Customer support resolved my issue within 10 minutes!",
-                "Refund delay: Refund took 10 business days to credit back to bank account."
-            ]
-
-        source_bullets = "\n".join([f"- {s}" for s in sources[:5]])
-        simulated_answer = (
-            "🤖 **[BizInsight RAG Assistant]**\n\n"
-            "Based on the customer reviews analyzed in your dataset:\n\n"
-            f"{source_bullets}\n\n"
-            "*Key Insight: Delivery delays (184 mentions) and Android app stability (96 mentions) are the main drivers of customer complaints.*"
-        )
+        # Deduplicate sources while preserving order
+        unique_sources = list(dict.fromkeys(sources))
+        
+        # Build an honest structured response based on actual retrieved reviews
+        if not unique_sources:
+            simulated_answer = (
+                "📊 **[BizInsight — Offline Mode]**\n\n"
+                "No matching reviews found in the database. "
+                "Please upload a CSV file with customer reviews first, then sync to ChromaDB.\n\n"
+                "> 💡 *Connect an OpenRouter API key for AI-powered summaries and theme analysis.*"
+            )
+        else:
+            source_bullets = "\n".join([f"- {s}" for s in unique_sources[:5]])
+            simulated_answer = (
+                "📊 **[BizInsight — Offline Mode]**\n\n"
+                f"## Matching Reviews\n"
+                f"Found {len(unique_sources)} relevant reviews:\n\n"
+                f"{source_bullets}\n\n"
+                "> 💡 *Connect an OpenRouter API key for AI-powered summaries and theme analysis.*"
+            )
         
         return ChatResponse(
             answer=simulated_answer,
-            sources=sources[:RAGConfig.TOP_K],
+            sources=unique_sources[:RAGConfig.TOP_K],
             session_id=request.session_id
         )
 

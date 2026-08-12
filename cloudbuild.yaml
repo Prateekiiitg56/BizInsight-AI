@@ -1,0 +1,27 @@
+steps:
+  # Step 1: Build the container image using root Dockerfile
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io/$PROJECT_ID/bizinsight-backend:$COMMIT_SHA', '-t', 'gcr.io/$PROJECT_ID/bizinsight-backend:latest', '.']
+
+  # Step 2: Push the container image to Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/bizinsight-backend:$COMMIT_SHA']
+
+  # Step 3: Deploy to Google Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'bizinsight-backend'
+      - '--image'
+      - 'gcr.io/$PROJECT_ID/bizinsight-backend:$COMMIT_SHA'
+      - '--region'
+      - 'us-central1'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+
+images:
+  - 'gcr.io/$PROJECT_ID/bizinsight-backend:$COMMIT_SHA'
+  - 'gcr.io/$PROJECT_ID/bizinsight-backend:latest'

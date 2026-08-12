@@ -11,23 +11,37 @@ from .config import RAGConfig
 logger = logging.getLogger(__name__)
 logging.getLogger("langchain.retrievers.multi_query").setLevel(logging.INFO)
 
-# We define a custom prompt template that instructs the LLM to strictly base its answer on the retrieved customer reviews (the "Customer Context"). The prompt emphasizes that if the context does not contain the answer, the LLM must respond with a specific sentence indicating that the information is not mentioned in the reviews. This helps to ensure that the LLM does not hallucinate information and provides answers grounded in the actual customer feedback.
-custom_prompt_template = """You are a senior Business Intelligence & Customer Support consultant analyzing customer feedback.
+# We define a custom prompt template that instructs the LLM to provide structured, accurate answers based strictly on the retrieved customer reviews. The structured format (Summary → Key Themes → Notable Quotes) prevents raw review dumps and hallucinated statistics.
+custom_prompt_template = """You are a senior Business Intelligence analyst answering questions about customer feedback.
 
-Customer Context / Reviews:
+Customer Reviews Retrieved:
 {context}
 
 User's Question:
 {question}
 
-Instructions:
-1. Base your answer STRICTLY on the Customer Context provided above.
-2. Directly answer the user's question in a professional, helpful tone.
-3. DO NOT repeat the raw customer reviews in your answer. Just summarize the findings.
-4. CRITICAL: If the Customer Context is empty, or does not contain the answer, you must output EXACTLY this sentence and nothing else: "The customer reviews do not mention this information."
+Answer using ONLY the reviews above. Follow this format strictly:
+
+## Summary
+A concise 2-3 sentence answer to the question based on the reviews.
+
+## Key Themes
+List the main themes found, with how many of the retrieved reviews mention each:
+- **Theme name**: X out of N reviews — brief description
+
+## Notable Quotes
+Up to 3 representative quotes from different reviews (no duplicates):
+- "quote text"
+
+Rules:
+- ONLY use data from the Customer Reviews above. Do NOT invent statistics or numbers.
+- If the reviews do not contain relevant information, say exactly: "The customer reviews do not contain information about this topic."
+- Never repeat the same review text multiple times.
+- Count themes only from the provided reviews, do not fabricate numbers like "184 mentions".
+- Keep the response concise and professional.
 """
 
-# By using this custom prompt, we guide the LLM to focus on the retrieved customer reviews and provide accurate, context-based answers while minimizing the risk of generating unsupported information.
+# By using this custom prompt, we guide the LLM to provide structured, accurate answers based on the retrieved customer reviews while preventing raw dumps and fabricated statistics.
 CUSTOM_PROMPT = PromptTemplate(
     template=custom_prompt_template, 
     input_variables=["context", "question"]

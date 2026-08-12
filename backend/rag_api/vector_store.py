@@ -17,20 +17,34 @@ class VectorStoreManager:
     @property
     def vectorstore(self):
         if self._vectorstore is None:
-            # We create a Chroma vector store instance, specifying the persist directory, collection name, and embedding function. 
-            self._vectorstore = Chroma(
-                persist_directory=RAGConfig.CHROMA_PERSIST_DIR,
-                collection_name=RAGConfig.COLLECTION_NAME,
-                embedding_function=self.embedding_model,
-            )
+            if RAGConfig.USE_REMOTE_CHROMA:
+                # Production: connect to remote ChromaDB server via HTTP
+                import chromadb
+                logger.info(f"Connecting to remote ChromaDB at {RAGConfig.CHROMA_HOST}:{RAGConfig.CHROMA_PORT}")
+                client = chromadb.HttpClient(
+                    host=RAGConfig.CHROMA_HOST,
+                    port=RAGConfig.CHROMA_PORT
+                )
+                self._vectorstore = Chroma(
+                    client=client,
+                    collection_name=RAGConfig.COLLECTION_NAME,
+                    embedding_function=self.embedding_model,
+                )
+            else:
+                # Local development: persist to local directory
+                self._vectorstore = Chroma(
+                    persist_directory=RAGConfig.CHROMA_PERSIST_DIR,
+                    collection_name=RAGConfig.COLLECTION_NAME,
+                    embedding_function=self.embedding_model,
+                )
         return self._vectorstore
     
     # The get_retriever method returns a retriever object that can be used to query the vector store. 
     def get_retriever(self, search_filter=None, where_document=None):
         search_kwargs = {
             "k": RAGConfig.TOP_K,     # final docs returned by vector stage
-            "fetch_k": 30,            # bigger pool for diversity selection
-            "lambda_mult": 0.5        # 0=more diverse, 1=more similar
+            "fetch_k": 20,            # candidate pool for diversity selection
+            "lambda_mult": 0.4        # 0=more diverse, 1=more similar — lower for fewer duplicates
         }
 
         # We can apply a metadata filter to the retriever to only retrieve documents that match certain criteria (e.g., sentiment). 
