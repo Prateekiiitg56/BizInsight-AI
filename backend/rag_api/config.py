@@ -27,10 +27,20 @@ class RAGConfig:
     
     @classmethod
     def get_api_key(cls):
-        key = os.getenv("OPENROUTER_API_KEY") or os.getenv("OPENROUTER_KEY")
-        if not key or not key.strip():
-            return "NO_KEY_PROVIDED"
-        return key.strip()
+        # 1. Direct environment variable lookup
+        for name in ["OPENROUTER_API_KEY", "OPENROUTER_KEY", "OPENAI_API_KEY", "LLM_API_KEY"]:
+            val = os.getenv(name)
+            if val and val.strip() and val.strip() != "NO_KEY_PROVIDED":
+                return val.strip()
+        
+        # 2. Case-insensitive and whitespace-insensitive search over all env keys
+        for k, v in os.environ.items():
+            k_clean = k.strip().upper()
+            if ("OPENROUTER" in k_clean or "OPENAI" in k_clean) and "KEY" in k_clean:
+                if v and v.strip() and v.strip() != "NO_KEY_PROVIDED":
+                    return v.strip()
+
+        return "NO_KEY_PROVIDED"
 
     @property
     def OPENROUTER_API_KEY(self):

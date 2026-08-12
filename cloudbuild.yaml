@@ -7,7 +7,7 @@ steps:
   - name: 'gcr.io/cloud-builders/docker'
     args: ['push', 'gcr.io/$PROJECT_ID/bizinsight-backend:$COMMIT_SHA']
 
-  # Step 3: Deploy to Google Cloud Run
+  # Step 3: Deploy to Google Cloud Run (preserving all environment variables configured in Cloud Console)
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: gcloud
     args:

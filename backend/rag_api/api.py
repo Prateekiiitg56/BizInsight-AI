@@ -72,6 +72,9 @@ def chat(request: ChatRequest):
     max_retries = 4  # Number of retry attempts for LLM calls in case of failure, with exponential backoff
     cm = get_chain_manager()
 
+    key_status = "DETECTED" if RAGConfig.get_api_key() != "NO_KEY_PROVIDED" else "NOT_FOUND"
+    logger.info(f"Received chat request: '{request.question}'. API Key status: {key_status}")
+
     # --- SMART METADATA ROUTER ---
     question_lower = request.question.lower()
     search_filter = None
