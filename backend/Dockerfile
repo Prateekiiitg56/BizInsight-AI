@@ -15,8 +15,9 @@ RUN pip install --no-cache-dir --upgrade pip && \
 ENV HF_HOME=/app/.cache
 ENV FASTEMBED_CACHE_PATH=/app/.cache/fastembed
 
-# Pre-download fastembed ONNX model weights into /app/.cache container directory
+# Pre-download fastembed ONNX model weights and cross-encoder reranker weights into /app/.cache
 RUN python -c "from fastembed import TextEmbedding; TextEmbedding(model_name='BAAI/bge-small-en-v1.5')"
+RUN python -c "from sentence_transformers import CrossEncoder; CrossEncoder('cross-encoder/ms-marco-MiniLM-L-6-v2')"
 
 # Copy application code
 COPY . .

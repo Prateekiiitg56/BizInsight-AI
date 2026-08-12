@@ -74,12 +74,16 @@ class RAGChainManager:
     @property
     def compressor(self):
         if self._compressor is None:
-            from langchain_community.cross_encoders import HuggingFaceCrossEncoder
-            from langchain_classic.retrievers.document_compressors import CrossEncoderReranker
-            logger.info("Loading Re-Ranker Model lazily...")
-            reranker_model = HuggingFaceCrossEncoder(model_name="cross-encoder/ms-marco-MiniLM-L-6-v2")
-            self._compressor = CrossEncoderReranker(model=reranker_model, top_n=8)
-        return self._compressor
+            try:
+                from langchain_community.cross_encoders import HuggingFaceCrossEncoder
+                from langchain_classic.retrievers.document_compressors import CrossEncoderReranker
+                logger.info("Loading Re-Ranker Model lazily...")
+                reranker_model = HuggingFaceCrossEncoder(model_name="cross-encoder/ms-marco-MiniLM-L-6-v2")
+                self._compressor = CrossEncoderReranker(model=reranker_model, top_n=8)
+            except Exception as e:
+                logger.warning(f"Re-Ranker Model could not be loaded ({e}). Continuing without CrossEncoder re-ranking...")
+                self._compressor = False  # Mark as failed to avoid retrying on every request
+        return self._compressor if self._compressor is not False else None
 
     # The get_qa_chain method constructs a RetrievalQA chain that incorporates multi-query expansion and re-ranking to provide accurate answers based on retrieved documents. It first creates a base retriever from the vector store manager, then wraps it with a MultiQueryRetriever to generate multiple queries for better context coverage, and finally applies a ContextualCompressionRetriever with the cross-encoder re-ranker to filter down to the most relevant documents before passing them to the LLM for answer generation.
     def get_qa_chain(self, search_filter=None):
@@ -90,17 +94,21 @@ class RAGChainManager:
         mq_retriever = MultiQueryRetriever.from_llm(retriever=base_retriever, llm=self.llm)
         
         # 3. Re-Ranking (Grade all results and keep only the top 8 best matches)
-        from langchain_classic.retrievers import ContextualCompressionRetriever
-        compression_retriever = ContextualCompressionRetriever(
-            base_compressor=self.compressor,
-            base_retriever=mq_retriever
-        )
+        comp = self.compressor
+        if comp is not None:
+            from langchain_classic.retrievers import ContextualCompressionRetriever
+            final_retriever = ContextualCompressionRetriever(
+                base_compressor=comp,
+                base_retriever=mq_retriever
+            )
+        else:
+            final_retriever = mq_retriever
         
         # 4. Build the final RetrievalQA chain with the compressed retriever and custom prompt
         return RetrievalQA.from_chain_type(
             llm=self.llm,
             chain_type="stuff", # We use "stuff" to feed all retrieved docs into the prompt
-            retriever=compression_retriever, 
+            retriever=final_retriever, 
             return_source_documents=True, 
             chain_type_kwargs={"prompt": CUSTOM_PROMPT},
             verbose=False
@@ -126,11 +134,15 @@ class RAGChainManager:
             mq_retriever = MultiQueryRetriever.from_llm(retriever=base_retriever, llm=self.llm)
             
             # Layer 3: Cross-Encoder Re-Ranker
-            from langchain_classic.retrievers import ContextualCompressionRetriever
-            compression_retriever = ContextualCompressionRetriever(
-                base_compressor=self.compressor,
-                base_retriever=mq_retriever
-            )
+            comp = self.compressor
+            if comp is not None:
+                from langchain_classic.retrievers import ContextualCompressionRetriever
+                final_retriever = ContextualCompressionRetriever(
+                    base_compressor=comp,
+                    base_retriever=mq_retriever
+                )
+            else:
+                final_retriever = mq_retriever
             
             # Final Chain: Conversational Retrieval Chain with memory and custom prompt
             chain = ConversationalRetrievalChain.from_llm(
