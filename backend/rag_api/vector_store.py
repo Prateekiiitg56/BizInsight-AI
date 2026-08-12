@@ -41,6 +41,15 @@ class VectorStoreManager:
     
     # The get_retriever method returns a retriever object that can be used to query the vector store. 
     def get_retriever(self, search_filter=None, where_document=None):
+        # Auto-hydrate ChromaDB from database if vectorstore is empty (e.g. fresh container boot on Cloud Run)
+        try:
+            if self.vectorstore._collection.count() == 0:
+                logger.info("ChromaDB vector count is 0. Auto-syncing reviews from database...")
+                from sync_vectors import sync_reviews
+                sync_reviews(clear_existing=False)
+        except Exception as e:
+            logger.warning(f"Auto-sync hydration check skipped: {e}")
+
         search_kwargs = {
             "k": RAGConfig.TOP_K,     # final docs returned by vector stage
             "fetch_k": 20,            # candidate pool for diversity selection
