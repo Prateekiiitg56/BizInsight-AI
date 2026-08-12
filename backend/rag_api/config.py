@@ -1,7 +1,11 @@
 import os
 from dotenv import load_dotenv
 
+# Load .env file from working directory, backend folder, and root project folder
 load_dotenv()
+_backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+load_dotenv(os.path.join(_backend_dir, ".env"))
+load_dotenv(os.path.join(os.path.dirname(_backend_dir), ".env"))
 
 class RAGConfig:
     # Embedding model
@@ -18,8 +22,8 @@ class RAGConfig:
     TOP_K = 5  # Reduced from 15 — fewer, higher-quality docs prevent duplicate flooding
     SEARCH_TYPE = "similarity" 
     
-    # LLM configuration
-    LLM_MODEL = "google/gemini-2.5-flash"
+    # LLM configuration (Valid OpenRouter model slug)
+    LLM_MODEL = os.getenv("LLM_MODEL", "google/gemini-2.0-flash-001")
     
     @classmethod
     def get_api_key(cls):
