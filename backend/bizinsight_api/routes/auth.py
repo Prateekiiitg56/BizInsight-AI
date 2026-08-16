@@ -139,30 +139,44 @@ def me(current_user: dict = Depends(get_current_user)):
 def google_auth(req: GoogleAuthRequest):
     """
     Authenticate a user via Google OAuth.
-    Verifies the Google ID token, creates a new user if needed,
-    and returns a JWT token.
+    Verifies the Google ID token using Google's public tokeninfo API,
+    creates a new user if needed, and returns a JWT token.
     """
-    from google.oauth2 import id_token as google_id_token
-    from google.auth.transport import requests as google_requests
+    import requests as http_requests
 
     GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID") or os.getenv("NEXT_PUBLIC_GOOGLE_CLIENT_ID") or None
 
     try:
-        # Verify the Google ID token
-        idinfo = google_id_token.verify_oauth2_token(
-            req.id_token,
-            google_requests.Request(),
-            audience=GOOGLE_CLIENT_ID if GOOGLE_CLIENT_ID else None,
+        # Verify the Google ID token using Google's public tokeninfo endpoint
+        # This is simpler and more reliable than the google-auth library
+        verify_response = http_requests.get(
+            f"https://oauth2.googleapis.com/tokeninfo?id_token={req.id_token}",
+            timeout=10,
         )
+
+        if verify_response.status_code != 200:
+            raise HTTPException(
+                status_code=401,
+                detail=f"Google token verification failed (status {verify_response.status_code})."
+            )
+
+        idinfo = verify_response.json()
+
+        # Verify the audience (client_id) matches
+        if GOOGLE_CLIENT_ID and idinfo.get("aud") != GOOGLE_CLIENT_ID:
+            raise HTTPException(
+                status_code=401,
+                detail="Token was not issued for this application."
+            )
 
         # Extract user info from verified token
         google_email = idinfo.get("email")
-        google_name = idinfo.get("name", google_email.split("@")[0])
+        google_name = idinfo.get("name", google_email.split("@")[0] if google_email else "user")
 
         if not google_email:
             raise HTTPException(status_code=400, detail="Google account has no email.")
 
-        if not idinfo.get("email_verified", False):
+        if idinfo.get("email_verified") not in (True, "true"):
             raise HTTPException(status_code=400, detail="Google email is not verified.")
 
     except HTTPException:
@@ -207,3 +221,4 @@ def google_auth(req: GoogleAuthRequest):
             role=user["role"],
         ),
     )
+
