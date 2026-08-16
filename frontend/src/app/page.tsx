@@ -59,10 +59,13 @@ export default function UnifiedApp() {
                 router.push("/dashboard");
               } catch (err: any) {
                 setAuthError(err.message || "Google authentication failed.");
+              } finally {
                 setAuthLoading(false);
               }
             },
             auto_select: false,
+            itp_support: true,
+            use_fedcm_for_prompt: true,
           });
 
           const container = document.getElementById("google-signin-container");
@@ -154,10 +157,13 @@ export default function UnifiedApp() {
             router.push("/dashboard");
           } catch (err: any) {
             setAuthError(err.message || "Google authentication failed.");
+          } finally {
             setAuthLoading(false);
           }
         },
         auto_select: false,
+        itp_support: true,
+        use_fedcm_for_prompt: true,
       });
 
       const container = document.getElementById("google-signin-container");
@@ -175,7 +181,7 @@ export default function UnifiedApp() {
       }
 
       google.accounts.id.prompt((notification: any) => {
-        if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+        if (notification.isNotDisplayed() || notification.isSkippedMoment() || notification.isDismissedMoment()) {
           setAuthLoading(false);
         }
       });
