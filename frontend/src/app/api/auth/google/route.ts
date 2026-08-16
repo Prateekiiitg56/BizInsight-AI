@@ -17,18 +17,25 @@ async function fetchWithRetry(
   url: string,
   options: RequestInit,
   retries = 3,
-  delayMs = 2000
+  delayMs = 3000
 ): Promise<Response> {
   for (let i = 0; i < retries; i++) {
-    const res = await fetch(url, options);
-    // 503 = Render is waking up from hibernation, retry
-    if (res.status === 503 && i < retries - 1) {
-      await new Promise((r) => setTimeout(r, delayMs));
-      continue;
+    try {
+      const res = await fetch(url, options);
+      // 503 = Render is waking up from hibernation, retry
+      if (res.status === 503 && i < retries - 1) {
+        await new Promise((r) => setTimeout(r, delayMs));
+        continue;
+      }
+      return res;
+    } catch (err) {
+      if (i < retries - 1) {
+        await new Promise((r) => setTimeout(r, delayMs));
+        continue;
+      }
+      throw err;
     }
-    return res;
   }
-  // Should never reach here, but just in case
   return fetch(url, options);
 }
 
@@ -47,15 +54,27 @@ export async function POST(req: NextRequest) {
       3000
     );
 
-    const data = await backendRes.json().catch(() => ({}));
+    // Read response as text first to handle non-JSON responses
+    const responseText = await backendRes.text();
+
+    let data: any;
+    try {
+      data = JSON.parse(responseText);
+    } catch {
+      // Backend returned non-JSON (e.g. HTML error page from Render)
+      return NextResponse.json(
+        {
+          detail: `Backend returned non-JSON response (status ${backendRes.status}). The server may still be starting up — please try again in 30 seconds.`,
+        },
+        { status: 502 }
+      );
+    }
 
     return NextResponse.json(data, { status: backendRes.status });
   } catch (error: any) {
     return NextResponse.json(
       {
-        detail:
-          error.message ||
-          "Backend is starting up. Please try again in a few seconds.",
+        detail: `Cannot reach backend: ${error.message || "Unknown error"}. The server may be starting up — please try again in 30 seconds.`,
       },
       { status: 502 }
     );
