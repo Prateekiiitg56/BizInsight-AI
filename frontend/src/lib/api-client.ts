@@ -54,10 +54,18 @@ export const api = {
   },
 
   async googleLogin(body: { id_token: string }) {
-    return request<any>("/api/auth/google", {
+    // Use the local Next.js API route proxy (same-origin, no CORS)
+    // The proxy forwards to the Render backend server-to-server
+    const response = await fetch("/api/auth/google", {
       method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || "Google authentication failed.");
+    }
+    return response.json();
   },
 
   // Dashboard
