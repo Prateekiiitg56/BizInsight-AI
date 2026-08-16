@@ -37,7 +37,8 @@ export default function PublicChatPage() {
       const res = await api.chat(token, { question: text, session_id: sessionId, use_memory: useMemory });
       setMessages(p => [...p, { role: "assistant", content: res.answer, sources: res.sources }]);
     } catch (err: any) {
-      setMessages(p => [...p, { role: "assistant", content: `Error: ${err.message || "Failed to contact RAG service."}` }]);
+      const fallbackMsg = "⚠️ The backend service might not be loaded properly or is spinning up due to the Render free-tier setup (takes ~30-50 seconds to wake from sleep).\n\nPlease wait a moment and try again! (Or consider donating something so I can upgrade to a paid tier, hehe ☕😉)";
+      setMessages(p => [...p, { role: "assistant", content: fallbackMsg }]);
     } finally { setLoading(false); }
   };
 

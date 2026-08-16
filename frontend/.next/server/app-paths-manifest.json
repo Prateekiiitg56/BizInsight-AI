@@ -3,9 +3,9 @@
   "/api/auth/google/route": "app/api/auth/google/route.js",
   "/chat/page": "app/chat/page.js",
   "/page": "app/page.js",
-  "/dashboard/page": "app/dashboard/page.js",
-  "/dashboard/upload/page": "app/dashboard/upload/page.js",
-  "/dashboard/chat/page": "app/dashboard/chat/page.js",
   "/dashboard/alerts/page": "app/dashboard/alerts/page.js",
-  "/dashboard/clusters/page": "app/dashboard/clusters/page.js"
+  "/dashboard/clusters/page": "app/dashboard/clusters/page.js",
+  "/dashboard/page": "app/dashboard/page.js",
+  "/dashboard/chat/page": "app/dashboard/chat/page.js",
+  "/dashboard/upload/page": "app/dashboard/upload/page.js"
 }

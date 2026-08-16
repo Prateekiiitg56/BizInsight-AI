@@ -77,7 +77,8 @@ export default function DashboardHome() {
       const res = await api.chat(token, { question: text, use_memory: false });
       setChatMessages(prev => [...prev, { role: "assistant", content: res.answer }]);
     } catch {
-      setChatMessages(prev => [...prev, { role: "assistant", content: "This is a UI demo; please check your backend RAG configuration." }]);
+      const fallbackMsg = "⚠️ The backend service might not be loaded properly or is spinning up due to the Render free-tier setup (takes ~30-50 seconds to wake from sleep).\n\nPlease wait a moment and try again! (Or consider donating something so I can upgrade to a paid tier, hehe ☕😉)";
+      setChatMessages(prev => [...prev, { role: "assistant", content: fallbackMsg }]);
     } finally {
       setChatLoading(false);
       setTimeout(() => chatLogEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
