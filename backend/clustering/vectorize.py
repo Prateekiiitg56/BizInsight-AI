@@ -3,7 +3,6 @@ Vectorize Module
 Converts cleaned text reviews into numerical embeddings using Sentence Transformers
 """
 
-from sentence_transformers import SentenceTransformer
 import numpy as np
 from typing import List, Optional
 import streamlit as st
@@ -20,6 +19,7 @@ def load_model(model_name: str = "all-mpnet-base-v2", fine_tuned_path: str = "mo
     If fine-tuned model exists at fine_tuned_path, use it; otherwise fallback to model_name.
     """
     global _model, _current_model_name
+    from sentence_transformers import SentenceTransformer
     
     # Check if fine-tuned model exists
     if os.path.exists(fine_tuned_path):

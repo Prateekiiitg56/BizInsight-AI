@@ -4,14 +4,10 @@ Run Clustering Module - BERTopic with embedding-based category mapping
 
 import numpy as np
 from typing import List, Dict, Optional
-from bertopic import BERTopic
-import hdbscan
-from sentence_transformers import SentenceTransformer
 from sklearn.metrics import silhouette_score
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from collections import Counter
-from umap import UMAP
 
 from clustering.preprocess import preprocess_reviews
 from clustering.vectorize import load_model
@@ -213,6 +209,10 @@ def run_pipeline(
     # 2. Load embedding model
     if embedding_model is None:
         embedding_model = load_model()
+
+    from bertopic import BERTopic
+    import hdbscan
+    from umap import UMAP
     
     # BerTopic with custom vectorizer and tuned parameters for better performance on small datasets
     vectorizer_model = CountVectorizer(

@@ -1,6 +1,5 @@
 import nltk
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
-from transformers import pipeline
 import numpy as np
 import re
 
@@ -31,13 +30,12 @@ except LookupError:
 
 vader = SentimentIntensityAnalyzer()
 
-
-
 bert_pipeline = None
 
 def _get_bert_pipeline():
     global bert_pipeline
     if bert_pipeline is None:
+        from transformers import pipeline
         bert_pipeline = pipeline(
             "sentiment-analysis",
             model="cardiffnlp/twitter-roberta-base-sentiment-latest",
