@@ -28,6 +28,31 @@ export default function UnifiedApp() {
     if (token && storedUser) {
       setUser(JSON.parse(storedUser));
       router.push("/dashboard");
+      return;
+    }
+
+    // Handle Google OAuth redirect response from URL hash
+    const hash = typeof window !== "undefined" ? window.location.hash : "";
+    if (hash && hash.includes("id_token=")) {
+      const params = new URLSearchParams(hash.replace("#", "?"));
+      const idToken = params.get("id_token");
+      if (idToken) {
+        window.history.replaceState(null, "", window.location.pathname);
+        setAuthLoading(true);
+        api.googleLogin({ id_token: idToken })
+          .then((res) => {
+            localStorage.setItem("bizinsight_token", res.token);
+            localStorage.setItem("bizinsight_user", JSON.stringify(res.user));
+            setUser(res.user);
+            router.push("/dashboard");
+          })
+          .catch((err) => {
+            setAuthError(err.message || "Google authentication failed.");
+          })
+          .finally(() => {
+            setAuthLoading(false);
+          });
+      }
     }
   }, [router]);
 
@@ -144,51 +169,12 @@ export default function UnifiedApp() {
       return;
     }
 
-    const google = (window as any).google;
-    if (google?.accounts?.id) {
-      google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: async (response: any) => {
-          try {
-            const res = await api.googleLogin({ id_token: response.credential });
-            localStorage.setItem("bizinsight_token", res.token);
-            localStorage.setItem("bizinsight_user", JSON.stringify(res.user));
-            setUser(res.user);
-            router.push("/dashboard");
-          } catch (err: any) {
-            setAuthError(err.message || "Google authentication failed.");
-          } finally {
-            setAuthLoading(false);
-          }
-        },
-        auto_select: false,
-        itp_support: true,
-        use_fedcm_for_prompt: true,
-      });
+    // Perform direct Google OAuth 2.0 redirect (bypasses COOP postMessage blocks entirely)
+    const redirectUri = window.location.origin;
+    const nonce = Math.random().toString(36).substring(2);
+    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(GOOGLE_CLIENT_ID)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=id_token&scope=openid%20email%20profile&nonce=${nonce}`;
 
-      const container = document.getElementById("google-signin-container");
-      if (container) {
-        container.innerHTML = "";
-        google.accounts.id.renderButton(container, {
-          theme: darkMode ? "filled_black" : "outline",
-          size: "large",
-          width: 320,
-          text: "continue_with",
-          shape: "rectangular",
-          logo_alignment: "left",
-        });
-        setGisReady(true);
-      }
-
-      google.accounts.id.prompt((notification: any) => {
-        if (notification.isNotDisplayed() || notification.isSkippedMoment() || notification.isDismissedMoment()) {
-          setAuthLoading(false);
-        }
-      });
-    } else {
-      setAuthError("Loading Google Sign-In script... Please try again in a moment.");
-      setAuthLoading(false);
-    }
+    window.location.href = authUrl;
   };
 
   return (

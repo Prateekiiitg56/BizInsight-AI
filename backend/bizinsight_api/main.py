@@ -48,13 +48,19 @@ app = FastAPI(
 # CORS — allow Next.js frontend (dev + prod Vercel deployments)
 allowed_origins = [
     "http://localhost:3000",
+    "http://localhost:5173",
     "http://localhost:8501",
-    os.getenv("FRONTEND_URL", "*"),
+    "https://biz-insight-ai-eight.vercel.app",
 ]
+
+frontend_env = os.getenv("FRONTEND_URL")
+if frontend_env and frontend_env != "*":
+    allowed_origins.append(frontend_env.rstrip("/"))
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"] if os.getenv("ALLOW_ALL_ORIGINS", "true").lower() == "true" else allowed_origins,
+    allow_origins=allowed_origins,
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
