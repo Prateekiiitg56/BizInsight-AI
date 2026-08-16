@@ -165,7 +165,9 @@ def google_auth(req: GoogleAuthRequest):
         if not idinfo.get("email_verified", False):
             raise HTTPException(status_code=400, detail="Google email is not verified.")
 
-    except ValueError as e:
+    except HTTPException:
+        raise
+    except Exception as e:
         raise HTTPException(status_code=401, detail=f"Invalid Google token: {str(e)}")
 
     # Check if user already exists by email
