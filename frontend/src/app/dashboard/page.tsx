@@ -2,10 +2,12 @@
 
 import React, { useEffect, useState, useRef } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { api } from "@/lib/api-client";
 import { Upload, RefreshCw, AlertCircle, BarChart2, ArrowUpRight } from "lucide-react";
 
 export default function DashboardHome() {
+  const router = useRouter();
   const [data, setData] = useState<any>(null);
   const [alerts, setAlerts] = useState<any>(null);
   const [loading, setLoading] = useState(true);
