@@ -12,5 +12,14 @@ services:
         value: "true"
       - key: ALLOW_ALL_ORIGINS
         value: "true"
+      - key: NLTK_DATA
+        value: "/tmp/nltk_data"
+      - key: OMP_NUM_THREADS
+        value: "1"
+      - key: MKL_NUM_THREADS
+        value: "1"
+      - key: OPENBLAS_NUM_THREADS
+        value: "1"
       - key: HF_TOKEN
         sync: false
+

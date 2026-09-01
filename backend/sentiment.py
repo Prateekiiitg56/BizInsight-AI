@@ -23,10 +23,15 @@ def _concession_penalty(text: str) -> float:
                 if after_score < 0:
                     return after_score * 0.5  # penalty for negative clause after concession
     return 0.0
+nltk_dir = os.getenv("NLTK_DATA", "/tmp/nltk_data")
+os.makedirs(nltk_dir, exist_ok=True)
+if nltk_dir not in nltk.data.path:
+    nltk.data.path.append(nltk_dir)
+
 try:
     nltk.data.find("sentiment/vader_lexicon.zip")
 except LookupError:
-    nltk.download("vader_lexicon", quiet=True)
+    nltk.download("vader_lexicon", download_dir=nltk_dir, quiet=True)
 
 vader = SentimentIntensityAnalyzer()
 
