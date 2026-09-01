@@ -53,13 +53,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         setUser(userData);
         localStorage.setItem("bizinsight_user", JSON.stringify(userData));
       })
-      .catch(() => {
-        // Token invalid — clear and redirect to login
-        if (!storedUser) {
-          localStorage.removeItem("bizinsight_token");
-          localStorage.removeItem("bizinsight_user");
-          router.push("/");
-        }
+      .catch((err) => {
+        console.error("Token verification failed:", err);
+        localStorage.removeItem("bizinsight_token");
+        localStorage.removeItem("bizinsight_user");
+        router.push("/");
       })
       .finally(() => {
         setLoading(false);

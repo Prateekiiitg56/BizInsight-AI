@@ -32,7 +32,13 @@ export default function DashboardHome() {
       setData(summary);
       setAlerts(risk);
       setLastUpdated(new Date());
-    } catch {
+    } catch (err: any) {
+      if (err?.message?.toLowerCase().includes("token") || err?.message?.toLowerCase().includes("log in") || err?.message?.toLowerCase().includes("invalid")) {
+        localStorage.removeItem("bizinsight_token");
+        localStorage.removeItem("bizinsight_user");
+        router.push("/");
+        return;
+      }
       setFetchError(true);
     } finally {
       setLoading(false);

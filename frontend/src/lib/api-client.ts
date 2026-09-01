@@ -24,7 +24,12 @@ async function request<T>(path: string, options: FetchOptions = {}): Promise<T> 
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.detail || "An unexpected error occurred.");
+    const errorMessage = errorData.detail || "An unexpected error occurred.";
+    if (response.status === 401 && typeof window !== "undefined") {
+      localStorage.removeItem("bizinsight_token");
+      localStorage.removeItem("bizinsight_user");
+    }
+    throw new Error(errorMessage);
   }
 
   return response.json() as Promise<T>;
