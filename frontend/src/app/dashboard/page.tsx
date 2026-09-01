@@ -3,29 +3,18 @@
 import React, { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api-client";
-import { Upload, RefreshCw, AlertCircle } from "lucide-react";
-
-const fallbackData = {
-  total_reviews: 2340, positive_count: 1420, negative_count: 610, neutral_count: 310,
-  avg_sentiment: 0.42, positive_percent: 60.7, neutral_percent: 13.2, negative_percent: 26.1,
-  top_keywords: [
-    { keyword: "shipping delay", frequency: 184 }, { keyword: "late delivery", frequency: 140 },
-    { keyword: "app crash", frequency: 96 }, { keyword: "refund", frequency: 61 }, { keyword: "support wait", frequency: 44 },
-  ],
-};
-const fallbackAlerts = { risk_level: "low", negative_percent: 26.1, threshold: 40, total_reviews: 2340, top_issues: [] };
+import { Upload, RefreshCw, AlertCircle, BarChart2, ArrowUpRight } from "lucide-react";
 
 export default function DashboardHome() {
   const [data, setData] = useState<any>(null);
   const [alerts, setAlerts] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const [reviewCountAnimated, setReviewCountAnimated] = useState(0);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const countRef = useRef(false);
 
-  const [chatMessages, setChatMessages] = useState<{ role: string; content: string }[]>([
-    { role: "user", content: "What's driving the negative reviews this week?" },
-    { role: "assistant", content: "Delivery delays are the top driver, with 184 reviews mentioning late shipping, up from 140 last week." },
-  ]);
+  const [chatMessages, setChatMessages] = useState<{ role: string; content: string }[]>([]);
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
   const chatLogEndRef = useRef<HTMLDivElement>(null);
@@ -37,12 +26,14 @@ export default function DashboardHome() {
       return;
     }
     setLoading(true);
+    setFetchError(false);
     try {
       const [summary, risk] = await Promise.all([api.getSummary(token), api.getAlerts(token)]);
       setData(summary);
       setAlerts(risk);
+      setLastUpdated(new Date());
     } catch {
-      // Use fallback data on error
+      setFetchError(true);
     } finally {
       setLoading(false);
     }
@@ -50,14 +41,12 @@ export default function DashboardHome() {
 
   useEffect(() => { fetchData(); }, []);
 
-  // Use real data if available, else fallback (like the reference HTML)
-  const d = data || fallbackData;
-  const a = alerts || fallbackAlerts;
-
+  // Animate review count
   useEffect(() => {
-    if (loading || countRef.current) return;
+    if (loading || countRef.current || !data) return;
     countRef.current = true;
-    const target = d.total_reviews;
+    const target = data.total_reviews;
+    if (target === 0) { setReviewCountAnimated(0); return; }
     const dur = 1000, start = performance.now();
     function tick(now: number) {
       const t = Math.min(1, (now - start) / dur);
@@ -65,7 +54,7 @@ export default function DashboardHome() {
       if (t < 1) requestAnimationFrame(tick);
     }
     requestAnimationFrame(tick);
-  }, [loading, d.total_reviews]);
+  }, [loading, data]);
 
   const handleChatSend = async (text: string) => {
     if (!text.trim() || chatLoading) return;
@@ -77,7 +66,7 @@ export default function DashboardHome() {
       const res = await api.chat(token, { question: text, use_memory: false });
       setChatMessages(prev => [...prev, { role: "assistant", content: res.answer }]);
     } catch {
-      const fallbackMsg = "⚠️ The backend service might not be loaded properly or is spinning up due to the Render free-tier setup (takes ~30-50 seconds to wake from sleep).\n\nPlease wait a moment and try again! (Or consider donating something so I can upgrade to a paid tier, hehe ☕😉)";
+      const fallbackMsg = "⚠️ The backend service might not be loaded properly or is spinning up due to the Render free-tier setup (takes ~30-50 seconds to wake from sleep).\n\nPlease wait a moment and try again!";
       setChatMessages(prev => [...prev, { role: "assistant", content: fallbackMsg }]);
     } finally {
       setChatLoading(false);
@@ -118,10 +107,61 @@ export default function DashboardHome() {
     }
   };
 
+  // Format "last updated" relative time
+  const getRelativeTime = () => {
+    if (!lastUpdated) return "";
+    const diff = Math.floor((Date.now() - lastUpdated.getTime()) / 1000);
+    if (diff < 60) return "just now";
+    if (diff < 3600) return `${Math.floor(diff / 60)} minutes ago`;
+    return `${Math.floor(diff / 3600)} hours ago`;
+  };
+
   if (loading) {
     return (<div className="min-h-[60vh] flex flex-col items-center justify-center gap-3"><RefreshCw className="animate-spin text-zinc-400" size={24} /><p className="text-sm text-zinc-500">Loading dashboard...</p></div>);
   }
 
+  // Check if user has no data (either API returned 0 reviews, or API failed)
+  const hasNoData = !data || data.total_reviews === 0;
+
+  // Empty state — user hasn't uploaded anything yet
+  if (hasNoData && !fetchError) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-6 text-center">
+        <div className="w-16 h-16 rounded-2xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
+          <BarChart2 size={28} className="text-zinc-400" />
+        </div>
+        <div>
+          <h2 className="text-xl font-semibold tracking-tight mb-2">No data yet</h2>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400 max-w-sm">Upload a CSV file with your customer reviews to see sentiment analysis, trends, and insights here.</p>
+        </div>
+        <Link href="/dashboard/upload" className="text-sm font-medium px-6 py-2.5 rounded-lg bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:opacity-90 transition-opacity flex items-center gap-2">
+          <Upload size={16} /> Upload your first CSV
+        </Link>
+      </div>
+    );
+  }
+
+  // Error state — backend unreachable
+  if (fetchError && hasNoData) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-6 text-center">
+        <div className="w-16 h-16 rounded-2xl bg-red-50 dark:bg-red-950/30 flex items-center justify-center">
+          <AlertCircle size={28} className="text-red-500" />
+        </div>
+        <div>
+          <h2 className="text-xl font-semibold tracking-tight mb-2">Couldn&apos;t load dashboard</h2>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400 max-w-sm">The backend service may be starting up (free-tier cold starts take ~30-50s). Please wait a moment and try again.</p>
+        </div>
+        <button onClick={() => { countRef.current = false; fetchData(); }} className="text-sm font-medium px-6 py-2.5 rounded-lg bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:opacity-90 transition-opacity flex items-center gap-2">
+          <RefreshCw size={16} /> Retry
+        </button>
+      </div>
+    );
+  }
+
+  // We have real data — render the dashboard
+  const d = data;
+  const a = alerts || { risk_level: "low", negative_percent: 0, threshold: 40, total_reviews: 0, top_issues: [] };
   const riskColor = a.risk_level === "high" ? "text-red-500" : a.risk_level === "medium" ? "text-amber-500" : "text-emerald-600 dark:text-emerald-400";
 
   return (
@@ -129,7 +169,7 @@ export default function DashboardHome() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-2xl font-semibold tracking-tight">Dashboard</h2>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">Last updated 4 minutes ago</p>
+          {lastUpdated && <p className="text-sm text-zinc-500 dark:text-zinc-400">Last updated {getRelativeTime()}</p>}
         </div>
         <div className="flex items-center gap-2">
           <Link href="/dashboard/upload" className="text-sm font-medium px-4 py-2 rounded-lg bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:opacity-90 transition-opacity flex items-center gap-1.5">
@@ -143,7 +183,7 @@ export default function DashboardHome() {
       </div>
 
       {exportError && (
-        <div className="mb-6 p-4 rounded-xl border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 flex items-center justify-between gap-4 animate-in fade-in slide-in-from-top-2 duration-200">
+        <div className="mb-6 p-4 rounded-xl border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 flex items-center justify-center shrink-0">
               <AlertCircle size={18} />
@@ -164,67 +204,74 @@ export default function DashboardHome() {
         </div>
       )}
 
-      {/* Metrics: matches reference exactly */}
+      {/* Metrics */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         <div className="border border-zinc-200 dark:border-zinc-800 rounded-xl p-5">
           <div className="text-xs text-zinc-500 dark:text-zinc-400 mb-2">Avg. sentiment</div>
           <div className="text-2xl font-semibold">{d.avg_sentiment > 0 ? "+" : ""}{d.avg_sentiment.toFixed(2)}</div>
-          <div className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">▲ 0.06 vs last week</div>
+          <div className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">{d.positive_percent.toFixed(0)}% positive</div>
         </div>
         <div className="border border-zinc-200 dark:border-zinc-800 rounded-xl p-5">
           <div className="text-xs text-zinc-500 dark:text-zinc-400 mb-2">Reviews analyzed</div>
           <div className="text-2xl font-semibold">{reviewCountAnimated.toLocaleString()}</div>
-          <div className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">▲ 312 this week</div>
+          <div className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">{d.negative_count} negative · {d.neutral_count} neutral</div>
         </div>
         <div className="border border-zinc-200 dark:border-zinc-800 rounded-xl p-5">
           <div className="text-xs text-zinc-500 dark:text-zinc-400 mb-2">Risk level</div>
           <div className={`text-2xl font-semibold uppercase ${riskColor}`}>{a.risk_level}</div>
-          <div className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">stable for 9 days</div>
+          <div className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">{a.negative_percent.toFixed(1)}% negative rate</div>
         </div>
         <div className="border border-zinc-200 dark:border-zinc-800 rounded-xl p-5">
           <div className="text-xs text-zinc-500 dark:text-zinc-400 mb-2">Negative spike</div>
           <div className="text-2xl font-semibold">{a.risk_level === "high" ? "Detected" : "None"}</div>
-          <div className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">threshold: ≥15pt jump</div>
+          <div className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">threshold: ≥{a.threshold || 40}% negative</div>
         </div>
       </div>
 
-      {/* Chart area + Keywords: matches reference */}
+      {/* Chart area + Keywords */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mb-6">
         <div className="lg:col-span-2 border border-zinc-200 dark:border-zinc-800 rounded-xl p-5">
-          <h3 className="text-sm font-medium mb-4">Satisfaction trend <span className="text-zinc-400 dark:text-zinc-500 font-normal">· last 30 days</span></h3>
-          <SatisfactionChart />
+          <h3 className="text-sm font-medium mb-4">Satisfaction trend <span className="text-zinc-400 dark:text-zinc-500 font-normal">· from your data</span></h3>
+          <SatisfactionChart trendData={d.trend} />
         </div>
         <div className="border border-zinc-200 dark:border-zinc-800 rounded-xl p-5">
           <h3 className="text-sm font-medium mb-4">Top complaint keywords</h3>
           <div className="flex flex-wrap gap-2">
-            {(d.top_keywords || fallbackData.top_keywords).map((kw: any, idx: number) => (
-              <span key={idx} className={`text-xs px-3 py-1.5 rounded-full ${idx < 2 ? "bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400" : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400"}`}>
-                {kw.keyword}
-              </span>
-            ))}
+            {d.top_keywords && d.top_keywords.length > 0 ? (
+              d.top_keywords.map((kw: any, idx: number) => (
+                <span key={idx} className={`text-xs px-3 py-1.5 rounded-full ${idx < 2 ? "bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400" : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400"}`}>
+                  {kw.keyword} <span className="opacity-60">({kw.frequency})</span>
+                </span>
+              ))
+            ) : (
+              <p className="text-xs text-zinc-400">No keywords extracted yet.</p>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Clusters: matches reference */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
-        {[
-          { cat: "DELIVERY", count: 184, title: "Shipping & delivery delays", desc: "Recurring theme across the last 2 weeks." },
-          { cat: "TECHNICAL", count: 96, title: "App reliability", desc: "Mostly mobile users, Android." },
-          { cat: "PAYMENT", count: 61, title: "Refund processing time", desc: "Growing slowly, watch next week." },
-        ].map((c, i) => (
-          <div key={i} className="border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 hover:shadow-lg transition-shadow cursor-pointer">
-            <div className="text-xs text-zinc-400 dark:text-zinc-500 mb-1">CATEGORY · {c.cat} <span className="float-right">{c.count}</span></div>
-            <h4 className="font-medium text-sm mb-1">{c.title}</h4>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">{c.desc}</p>
+      {/* Top issues from alerts */}
+      {a.top_issues && a.top_issues.length > 0 && (
+        <div className="mb-6">
+          <h3 className="text-sm font-medium mb-3">Top negative issues</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {a.top_issues.map((issue: string, i: number) => (
+              <div key={i} className="border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 hover:shadow-lg transition-shadow">
+                <div className="text-xs text-zinc-400 dark:text-zinc-500 mb-1">ISSUE #{i + 1}</div>
+                <h4 className="font-medium text-sm">{issue}</h4>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </div>
+      )}
 
-      {/* Chat: matches reference */}
+      {/* Chat */}
       <div className="border border-zinc-200 dark:border-zinc-800 rounded-xl p-5">
         <h3 className="text-sm font-medium mb-4">Ask your data <span className="text-zinc-400 dark:text-zinc-500 font-normal">· grounded only in your reviews</span></h3>
         <div className="flex flex-col gap-3 mb-4 max-h-48 overflow-y-auto pr-2 no-scrollbar">
+          {chatMessages.length === 0 && (
+            <p className="text-xs text-zinc-400 dark:text-zinc-500 text-center py-4">Ask a question about your uploaded reviews to get started.</p>
+          )}
           {chatMessages.map((m, idx) => (
             <div key={idx} className={`max-w-[80%] text-sm px-4 py-2 rounded-2xl ${m.role === "user" ? "self-end bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-br-sm" : "self-start bg-zinc-100 dark:bg-zinc-800 rounded-bl-sm"}`}>
               {m.content}
@@ -242,8 +289,8 @@ export default function DashboardHome() {
   );
 }
 
-/** Canvas-based satisfaction chart matching the reference HTML exactly */
-function SatisfactionChart() {
+/** Canvas-based satisfaction chart using real trend data from API */
+function SatisfactionChart({ trendData }: { trendData?: { date: string; avg_sentiment: number }[] }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const draw = () => {
@@ -257,10 +304,29 @@ function SatisfactionChart() {
     if (!ctx) return;
     ctx.clearRect(0, 0, w, h);
 
-    const pts = [0.31,0.33,0.30,0.28,0.35,0.38,0.36,0.40,0.37,0.34,0.39,0.42,0.41,0.38,0.44,0.46,0.43,0.40,0.45,0.48,0.47,0.44,0.42,0.46,0.49,0.50,0.47,0.45,0.48,0.42];
-    const max = 0.6, min = 0.1, pad = 10;
-    const stepX = (w - pad * 2) / (pts.length - 1);
     const isDark = document.documentElement.classList.contains("dark");
+
+    // Use real trend data if available
+    const pts = trendData && trendData.length > 0
+      ? trendData.map(t => t.avg_sentiment)
+      : [];
+
+    if (pts.length === 0) {
+      // No data — show empty state
+      ctx.fillStyle = isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.3)";
+      ctx.font = "13px system-ui, sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("No trend data yet — upload reviews to see the chart", w / 2, h / 2);
+      return;
+    }
+
+    const dataMin = Math.min(...pts);
+    const dataMax = Math.max(...pts);
+    const range = dataMax - dataMin || 0.1;
+    const min = dataMin - range * 0.15;
+    const max = dataMax + range * 0.15;
+    const pad = 10;
+    const stepX = pts.length > 1 ? (w - pad * 2) / (pts.length - 1) : 0;
 
     // Grid lines
     ctx.strokeStyle = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)";
@@ -284,11 +350,10 @@ function SatisfactionChart() {
   useEffect(() => {
     draw();
     window.addEventListener("resize", draw);
-    // Redraw on theme change
     const observer = new MutationObserver(draw);
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
     return () => { window.removeEventListener("resize", draw); observer.disconnect(); };
-  }, []);
+  }, [trendData]);
 
   return <canvas ref={canvasRef} className="w-full" style={{ height: 200 }} />;
 }
