@@ -34,8 +34,17 @@ from bizinsight_api.routes.dashboard import router as dashboard_router
 from bizinsight_api.routes.clustering import router as clustering_router
 from bizinsight_api.routes.admin import router as admin_router
 
-# Import the existing RAG API routes to mount alongside the new routes
-from rag_api.api import app as rag_app
+# NOTE: We do NOT import rag_api.api at module load time anymore.
+# That import chain pulls in torch/transformers/sentence-transformers/
+# langchain/chromadb, which alone can eat 300-400MB+ of RAM just from
+# `import`-ing them (before any model weights are even loaded). On
+# Render's free tier (512MB RAM) that was enough to push the process
+# over the limit on boot, causing an OOM-kill -> restart -> OOM-kill
+# crash loop that looked like "the backend never finishes starting".
+#
+# Instead we lazy-load the RAG sub-app the first time /api/rag/* is
+# actually hit, via LazyASGIApp below. Auth/dashboard/reviews/
+# clustering traffic never pays that memory cost.
 
 # ─── App Setup ────────────────────────────────────────────────────────────────
 
@@ -79,8 +88,31 @@ app.include_router(dashboard_router)
 app.include_router(clustering_router)
 app.include_router(admin_router)
 
-# Mount the existing RAG chat/sync/health endpoints under /api prefix
-app.mount("/api/rag", rag_app)
+# Mount the existing RAG chat/sync/health endpoints under /api prefix,
+# but only import/build the heavy RAG app on first use (see note above).
+
+class LazyASGIApp:
+    """Wraps an ASGI app so the (expensive) import happens on first call,
+    not at process startup. Safe under concurrent requests: if two
+    requests race to import at the same time, both may build the app,
+    but only one instance is kept and both requests still work."""
+
+    def __init__(self, loader):
+        self._loader = loader
+        self._app = None
+
+    async def __call__(self, scope, receive, send):
+        if self._app is None:
+            self._app = self._loader()
+        await self._app(scope, receive, send)
+
+
+def _load_rag_app():
+    from rag_api.api import app as rag_app
+    return rag_app
+
+
+app.mount("/api/rag", LazyASGIApp(_load_rag_app))
 
 
 # ─── Root Health Check ────────────────────────────────────────────────────────
