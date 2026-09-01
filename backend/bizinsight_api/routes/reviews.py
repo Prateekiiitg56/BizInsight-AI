@@ -19,6 +19,9 @@ from bizinsight_api.models.schemas import (
     UploadSummary, ReviewsResponse, ReviewItem
 )
 
+import nltk
+from nltk.sentiment.vader import SentimentIntensityAnalyzer
+
 nltk_dir = os.getenv("NLTK_DATA", "/tmp/nltk_data")
 os.makedirs(nltk_dir, exist_ok=True)
 if nltk_dir not in nltk.data.path:
