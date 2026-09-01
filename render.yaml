@@ -12,3 +12,5 @@ services:
         value: "true"
       - key: ALLOW_ALL_ORIGINS
         value: "true"
+      - key: HF_TOKEN
+        sync: false
