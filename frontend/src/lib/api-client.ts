@@ -1,4 +1,4 @@
-const rawBaseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
+const rawBaseUrl = process.env.NEXT_PUBLIC_API_URL || "https://bizinsight-backend.onrender.com";
 const API_BASE_URL = rawBaseUrl.replace(/\/+$/, "");
 
 interface FetchOptions extends RequestInit {

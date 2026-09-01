@@ -46,7 +46,8 @@ app = FastAPI(
 )
 
 # CORS — allow Next.js frontend (dev + prod Vercel deployments)
-allowed_origins = [
+allow_all = os.getenv("ALLOW_ALL_ORIGINS", "true").lower() == "true"
+allowed_origins = ["*"] if allow_all else [
     "http://localhost:3000",
     "http://localhost:5173",
     "http://localhost:8501",
@@ -54,14 +55,14 @@ allowed_origins = [
 ]
 
 frontend_env = os.getenv("FRONTEND_URL")
-if frontend_env and frontend_env != "*":
+if frontend_env and frontend_env != "*" and not allow_all:
     allowed_origins.append(frontend_env.rstrip("/"))
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins,
-    allow_origin_regex=r"https://.*\.vercel\.app",
-    allow_credentials=True,
+    allow_origins=allowed_origins if not allow_all else ["*"],
+    allow_origin_regex=None if allow_all else r"https://.*\.vercel\.app",
+    allow_credentials=not allow_all,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -84,11 +85,11 @@ app.mount("/api/rag", rag_app)
 
 # ─── Root Health Check ────────────────────────────────────────────────────────
 
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD"])
 def root():
     return {"status": "ok", "service": "bizinsight-api", "version": "2.0.0", "docs": "/docs"}
 
-@app.get("/api/health")
+@app.api_route("/api/health", methods=["GET", "HEAD"])
 def health():
     return {"status": "ok", "service": "bizinsight-api", "version": "2.0.0"}
 

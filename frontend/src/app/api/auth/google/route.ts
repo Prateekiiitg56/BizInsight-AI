@@ -14,7 +14,7 @@ import { NextRequest, NextResponse } from "next/server";
  */
 
 const BACKEND_URL = (
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001"
+  process.env.NEXT_PUBLIC_API_URL || "https://bizinsight-backend.onrender.com"
 ).replace(/\/+$/, "");
 
 const JWT_SECRET =
