@@ -82,7 +82,7 @@ cd BizInsight-AI
 
 4. Configure the environment variables by creating a `.env` file in the root directory:
    ```env
-   OPENROUTER_API_KEY=your_openrouter_api_key_here
+   OPENROUTER_API_KEY=your_openrouter_api_key_
    ```
 
 5. Start the FastAPI backend server:
