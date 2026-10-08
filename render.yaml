@@ -1,25 +1,31 @@
 services:
   - type: web
     name: bizinsight-backend
-    env: python
+    runtime: python
     rootDir: backend
     buildCommand: pip install -r requirements.txt && python download_model.py
-    startCommand: uvicorn bizinsight_api.main:app --host 0.0.0.0 --port $PORT
+    startCommand: uvicorn bizinsight_api.main:app --host 0.0.0.0 --port $PORT --proxy-headers
+    healthCheckPath: /api/health
     envVars:
       - key: PYTHON_VERSION
-        value: 3.11.0
-      - key: DISABLE_BERT
-        value: "true"
-      - key: ALLOW_ALL_ORIGINS
-        value: "true"
+        value: 3.11.9
       - key: NLTK_DATA
-        value: "/tmp/nltk_data"
+        value: ./nltk_data
+      - key: JWT_SECRET
+        generateValue: true
+      - key: FRONTEND_URL
+        sync: false
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: HF_TOKEN
+        sync: false
       - key: OMP_NUM_THREADS
         value: "1"
       - key: MKL_NUM_THREADS
         value: "1"
       - key: OPENBLAS_NUM_THREADS
         value: "1"
-      - key: HF_TOKEN
-        sync: false
-

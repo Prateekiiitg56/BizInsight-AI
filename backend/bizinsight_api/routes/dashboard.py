@@ -1,17 +1,13 @@
 """
 Dashboard routes — pre-aggregated JSON for charts and metrics.
-Replaces the Streamlit Dashboard tab computations.
 """
 
-import os
 import pandas as pd
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, Depends
 from sklearn.feature_extraction.text import CountVectorizer
 
-import sys
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
-
 from database import fetch_feedback
+from bizinsight_api.config import HIGH_RISK_THRESHOLD, MEDIUM_RISK_THRESHOLD
 from bizinsight_api.routes.auth import get_current_user
 from bizinsight_api.models.schemas import (
     DashboardSummary, TrendPoint, KeywordItem, AlertStatus
@@ -53,13 +49,13 @@ def dashboard_summary(current_user: dict = Depends(get_current_user)):
     positive_pct = round((positive / total) * 100, 2)
     negative_pct = round((negative / total) * 100, 2)
     neutral_pct = round((neutral / total) * 100, 2)
-    avg_sentiment = round(df["sentiment"].mean(), 4)
+    avg_sentiment = round(float(df["sentiment"].mean()), 4)
 
     # Trend — average sentiment per day
     trend_df = df.groupby(df["date"].dt.date)["sentiment"].mean().reset_index()
     trend_df.columns = ["date", "avg_sentiment"]
     trend = [
-        TrendPoint(date=str(row["date"]), avg_sentiment=round(row["avg_sentiment"], 4))
+        TrendPoint(date=str(row["date"]), avg_sentiment=round(float(row["avg_sentiment"]), 4))
         for _, row in trend_df.iterrows()
     ]
 
@@ -96,8 +92,7 @@ def dashboard_summary(current_user: dict = Depends(get_current_user)):
 @router.get("/alerts", response_model=AlertStatus)
 def alerts_current(current_user: dict = Depends(get_current_user)):
     """
-    Return the current risk level based on negative sentiment percentage.
-    Mirrors the alert logic from the original app.py.
+    Return the current risk level based on the percentage of negative reviews.
     """
     data = fetch_feedback(user_id=current_user["id"])
 
@@ -107,12 +102,13 @@ def alerts_current(current_user: dict = Depends(get_current_user)):
             negative_percent=0.0,
             total_reviews=0,
             top_issues=[],
+            threshold=HIGH_RISK_THRESHOLD,
         )
 
     df = pd.DataFrame(data, columns=["review", "sentiment", "date"])
     total = len(df)
     negative = int((df["sentiment"] < 0).sum())
-    negative_pct = round((negative / total) * 100, 2) if total > 0 else 0
+    negative_pct = round((negative / total) * 100, 2)
 
     # Top issues from negative reviews
     neg_reviews = df[df["sentiment"] < 0]["review"].dropna()
@@ -125,11 +121,9 @@ def alerts_current(current_user: dict = Depends(get_current_user)):
         except ValueError:
             pass
 
-    # Risk level thresholds (same as original app.py)
-    ALERT_THRESHOLD = 40.0
-    if negative_pct >= ALERT_THRESHOLD:
+    if negative_pct >= HIGH_RISK_THRESHOLD:
         risk_level = "high"
-    elif negative_pct >= 25:
+    elif negative_pct >= MEDIUM_RISK_THRESHOLD:
         risk_level = "medium"
     else:
         risk_level = "low"
@@ -139,5 +133,5 @@ def alerts_current(current_user: dict = Depends(get_current_user)):
         negative_percent=negative_pct,
         total_reviews=total,
         top_issues=top_issues,
-        threshold=ALERT_THRESHOLD,
+        threshold=HIGH_RISK_THRESHOLD,
     )

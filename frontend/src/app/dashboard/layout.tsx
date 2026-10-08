@@ -1,130 +1,167 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { BarChart3, Layers, LogOut, Menu, MessageSquare, ShieldAlert, Upload, Users, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { BarChart2, Upload, ShieldAlert, Layers, MessageSquare, LogOut, User, Menu, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Logo } from "@/components/Logo";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { ErrorBanner, LoadingState } from "@/components/ui";
+import { UserContext } from "@/components/UserContext";
 import { api } from "@/lib/api-client";
+import { clearSession, getStoredUser, getToken, saveUser, UNAUTHORIZED_EVENT } from "@/lib/session";
+import type { User } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
-interface SidebarLinkProps {
-  href: string;
-  icon: React.ReactNode;
-  label: string;
-  active: boolean;
-  onClick?: () => void;
-}
-
-const SidebarLink: React.FC<SidebarLinkProps> = ({ href, icon, label, active, onClick }) => (
-  <Link href={href} onClick={onClick} className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all text-sm font-medium ${active ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white" : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-50 dark:hover:bg-zinc-800/50"}`}>
-    <span className={active ? "text-zinc-900 dark:text-white" : "text-zinc-400 dark:text-zinc-500"}>{icon}</span>
-    <span>{label}</span>
-  </Link>
-);
+const NAV = [
+  { href: "/dashboard", icon: BarChart3, label: "Overview" },
+  { href: "/dashboard/upload", icon: Upload, label: "Data upload" },
+  { href: "/dashboard/alerts", icon: ShieldAlert, label: "Risk alerts" },
+  { href: "/dashboard/clusters", icon: Layers, label: "Clustering" },
+  { href: "/dashboard/chat", icon: MessageSquare, label: "AI assistant" },
+];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(null);
+  const [loadError, setLoadError] = useState("");
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem("bizinsight_token");
-    const storedUser = localStorage.getItem("bizinsight_user");
-
-    if (!token) {
-      router.push("/");
+    if (!getToken()) {
+      router.replace("/login");
       return;
     }
+    const stored = getStoredUser();
+    setUser(stored);
 
-    // Load stored user immediately for fast UI render
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (e) {
-        console.error("Failed to parse stored user", e);
-      }
-    }
-
-    // Verify token with backend
-    api.me(token)
-      .then((userData) => {
-        setUser(userData);
-        localStorage.setItem("bizinsight_user", JSON.stringify(userData));
+    // Re-validate the session in the background; a 401 fires UNAUTHORIZED_EVENT below.
+    api
+      .me()
+      .then((u) => {
+        setUser(u);
+        saveUser(u);
       })
-      .catch((err) => {
-        console.error("Token verification failed:", err);
-        localStorage.removeItem("bizinsight_token");
-        localStorage.removeItem("bizinsight_user");
-        router.push("/");
-      })
-      .finally(() => {
-        setLoading(false);
+      .catch((err: Error) => {
+        // Without a cached profile there is nothing to render, so surface the error.
+        if (!stored) setLoadError(err.message);
       });
+
+    const onUnauthorized = () => router.replace("/login");
+    window.addEventListener(UNAUTHORIZED_EVENT, onUnauthorized);
+    return () => window.removeEventListener(UNAUTHORIZED_EVENT, onUnauthorized);
   }, [router]);
 
-  useEffect(() => {
-    if (darkMode) document.documentElement.classList.add("dark");
-    else document.documentElement.classList.remove("dark");
-  }, [darkMode]);
+  useEffect(() => setMobileOpen(false), [pathname]);
 
-  const handleLogout = () => { localStorage.removeItem("bizinsight_token"); localStorage.removeItem("bizinsight_user"); router.push("/"); };
+  const logout = () => {
+    clearSession();
+    router.replace("/");
+  };
 
-  if (loading) {
-    return (<div className="min-h-screen flex items-center justify-center"><div className="flex flex-col items-center gap-3"><span className="text-lg font-semibold tracking-tight">BizInsight AI</span><div className="w-8 h-0.5 bg-zinc-900 dark:bg-white rounded-full animate-pulse" /></div></div>);
+  if (!user) {
+    if (loadError) {
+      return (
+        <div className="mx-auto max-w-md px-4 pt-24">
+          <ErrorBanner
+            message={loadError}
+            action={
+              <button type="button" onClick={() => window.location.reload()} className="font-medium underline underline-offset-2">
+                Retry
+              </button>
+            }
+          />
+        </div>
+      );
+    }
+    return <LoadingState label="Loading your workspace…" />;
   }
 
-  const links = [
-    { href: "/dashboard", icon: <BarChart2 size={18} />, label: "Dashboard" },
-    { href: "/dashboard/upload", icon: <Upload size={18} />, label: "Data Upload" },
-    { href: "/dashboard/alerts", icon: <ShieldAlert size={18} />, label: "Trend Alerts" },
-    { href: "/dashboard/clusters", icon: <Layers size={18} />, label: "Clustering" },
-    { href: "/dashboard/chat", icon: <MessageSquare size={18} />, label: "AI Assistant" },
-  ];
+  const links = user.role === "admin" ? [...NAV, { href: "/dashboard/admin", icon: Users, label: "Users" }] : NAV;
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row">
-      {/* Mobile Top Bar */}
-      <div className="md:hidden flex items-center justify-between px-6 py-3 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 sticky top-0 z-30">
-        <span className="font-semibold text-base">BizInsight AI</span>
-        <button onClick={() => setMobileOpen(!mobileOpen)} className="p-2 rounded-lg border border-zinc-200 dark:border-zinc-700">
-          {mobileOpen ? <X size={20} /> : <Menu size={20} />}
-        </button>
-      </div>
-
-      {/* Sidebar */}
-      <aside className={`w-full md:w-60 border-r border-zinc-200 dark:border-zinc-800 flex flex-col justify-between p-5 fixed md:sticky top-0 md:h-screen z-20 transition-transform bg-white dark:bg-zinc-900 ${mobileOpen ? "translate-x-0 h-screen" : "-translate-x-full md:translate-x-0"}`}>
-        <div className="flex flex-col gap-6">
-          <div className="hidden md:flex items-center gap-2 px-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-zinc-900 dark:bg-white" />
-            <span className="text-base font-semibold tracking-tight">BizInsight AI</span>
-          </div>
-          <nav className="flex flex-col gap-1">
-            {links.map((link) => (<SidebarLink key={link.href} href={link.href} icon={link.icon} label={link.label} active={pathname === link.href} onClick={() => setMobileOpen(false)} />))}
-          </nav>
+    <UserContext.Provider value={user}>
+      <div className="min-h-screen md:flex">
+        {/* Mobile top bar */}
+        <div className="sticky top-0 z-30 flex items-center justify-between border-b border-zinc-200 bg-white px-4 py-3 dark:border-zinc-800 dark:bg-zinc-950 md:hidden">
+          <Logo href="/dashboard" />
+          <button
+            type="button"
+            onClick={() => setMobileOpen(true)}
+            className="rounded-lg border border-zinc-200 p-2 dark:border-zinc-700"
+            aria-label="Open navigation"
+          >
+            <Menu size={18} />
+          </button>
         </div>
-        <div className="flex flex-col gap-3 border-t border-zinc-200 dark:border-zinc-800 pt-4">
-          <div className="flex items-center gap-3 px-2">
-            <div className="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center"><User size={16} className="text-zinc-500" /></div>
-            <div className="flex-1 min-w-0">
-              <div className="text-xs font-semibold truncate">{user?.name || user?.username || "Prateek Singh"}</div>
-              <div className="text-[10px] text-zinc-500 truncate">{user?.email || user?.role || "Google User"}</div>
+
+        {mobileOpen && (
+          <div className="fixed inset-0 z-40 bg-black/40 md:hidden" onClick={() => setMobileOpen(false)} aria-hidden="true" />
+        )}
+
+        <aside
+          className={cn(
+            "fixed inset-y-0 left-0 z-50 flex w-64 flex-col justify-between border-r border-zinc-200 bg-white p-4 transition-transform dark:border-zinc-800 dark:bg-zinc-950 md:sticky md:top-0 md:h-screen md:w-60 md:translate-x-0",
+            mobileOpen ? "translate-x-0" : "-translate-x-full"
+          )}
+        >
+          <div className="flex flex-col gap-6">
+            <div className="flex items-center justify-between px-2 pt-1">
+              <Logo href="/dashboard" />
+              <button
+                type="button"
+                onClick={() => setMobileOpen(false)}
+                className="rounded-md p-1 text-zinc-500 md:hidden"
+                aria-label="Close navigation"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <nav className="flex flex-col gap-0.5" aria-label="Dashboard">
+              {links.map(({ href, icon: Icon, label }) => {
+                const active = pathname === href;
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    aria-current={active ? "page" : undefined}
+                    className={cn(
+                      "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition",
+                      active
+                        ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-white"
+                        : "text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-white"
+                    )}
+                  >
+                    <Icon size={17} />
+                    {label}
+                  </Link>
+                );
+              })}
+            </nav>
+          </div>
+
+          <div className="flex flex-col gap-3 border-t border-zinc-200 pt-4 dark:border-zinc-800">
+            <div className="flex items-center gap-3 px-2">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-zinc-900 text-xs font-semibold uppercase text-white dark:bg-white dark:text-zinc-900">
+                {user.username.slice(0, 1)}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-sm font-medium">{user.username}</div>
+                <div className="muted truncate text-xs">{user.email}</div>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button type="button" onClick={logout} className="btn-secondary flex-1 py-1.5 text-xs">
+                <LogOut size={13} /> Log out
+              </button>
+              <ThemeToggle />
             </div>
           </div>
-          <div className="flex gap-2">
-            <button onClick={handleLogout} className="flex-1 flex items-center justify-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors">
-              <LogOut size={13} /> Log out
-            </button>
-            <button onClick={() => setDarkMode(!darkMode)} className="text-[10px] px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors">Theme</button>
-          </div>
-        </div>
-      </aside>
+        </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 px-6 py-8 md:px-10 md:py-8 max-w-7xl mx-auto w-full overflow-y-auto no-scrollbar">
-        {children}
-      </main>
-    </div>
+        <main className="mx-auto w-full min-w-0 max-w-6xl flex-1 px-4 py-6 sm:px-6 md:px-10 md:py-8">{children}</main>
+      </div>
+    </UserContext.Provider>
   );
 }

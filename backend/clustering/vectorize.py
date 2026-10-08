@@ -1,53 +1,34 @@
 """
 Vectorize Module
-Converts cleaned text reviews into numerical embeddings using Sentence Transformers
+Converts cleaned text reviews into numerical embeddings using Sentence Transformers.
 """
 
-import numpy as np
-from typing import List, Optional
-import streamlit as st
 import os
+import threading
+from typing import Any, List, Optional
 
-# Global variable to cache the model (load once)
-_model = None
-_current_model_name = None
+import numpy as np
 
-@st.cache_resource
-def load_model(model_name: str = "all-mpnet-base-v2", fine_tuned_path: str = "models/finetuned_complaint_model_final"):
-    """
-    Load sentence transformer model.
-    If fine-tuned model exists at fine_tuned_path, use it; otherwise fallback to model_name.
-    """
-    global _model, _current_model_name
-    from sentence_transformers import SentenceTransformer
-    
-    # Check if fine-tuned model exists
-    if os.path.exists(fine_tuned_path):
-        model_to_load = fine_tuned_path
-        display_name = "fine-tuned model"
-        st.success(f"✅ Loaded fine-tuned model")
-    else:
-        model_to_load = model_name
-        display_name = model_name
-        st.info(f"Using default model ({model_name}) - fine-tuned model not found")
-    
-    # Only reload if model changed
-    if _model is None or _current_model_name != model_to_load:
-        with st.spinner(f"Loading {display_name} (first time only)..."):
-            _model = SentenceTransformer(model_to_load)
-            _current_model_name = model_to_load
-    
-    return _model
+_DEFAULT_FINE_TUNED_PATH = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "models", "finetuned_complaint_model_final"
+)
 
-def get_embeddings(reviews: List[str], model: Optional[SentenceTransformer] = None) -> np.ndarray:
-    """
-    Convert list of reviews to vector embeddings.
-    """
+_models: dict = {}
+_lock = threading.Lock()
+
+
+def load_model(model_name: str = "all-MiniLM-L6-v2", fine_tuned_path: str = _DEFAULT_FINE_TUNED_PATH):
+    """Load (and cache) a sentence transformer, preferring the fine-tuned model when present."""
+    model_to_load = fine_tuned_path if os.path.exists(fine_tuned_path) else model_name
+    with _lock:
+        if model_to_load not in _models:
+            from sentence_transformers import SentenceTransformer
+            _models[model_to_load] = SentenceTransformer(model_to_load)
+        return _models[model_to_load]
+
+
+def get_embeddings(reviews: List[str], model: Optional[Any] = None) -> np.ndarray:
+    """Convert a list of reviews to vector embeddings."""
     if model is None:
         model = load_model()
-    
-    progress_bar = st.progress(0)
-    embeddings = model.encode(reviews, show_progress_bar=False)
-    progress_bar.progress(100)
-    
-    return embeddings
+    return model.encode(reviews, show_progress_bar=False)

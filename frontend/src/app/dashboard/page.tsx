@@ -1,367 +1,244 @@
 "use client";
 
-import React, { useEffect, useState, useRef } from "react";
+import { ArrowRight, BarChart3, Download, MessageSquare, RefreshCw, Upload } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
+import { SentimentTrendChart } from "@/components/SentimentTrendChart";
+import {
+  EmptyState,
+  ErrorBanner,
+  formatScore,
+  LoadingState,
+  PageHeader,
+  RISK_STYLES,
+  sentimentColor,
+  Spinner,
+  StatCard,
+} from "@/components/ui";
 import { api } from "@/lib/api-client";
-import { Upload, RefreshCw, AlertCircle, BarChart2, ArrowUpRight } from "lucide-react";
+import type { AlertStatus, DashboardSummary } from "@/lib/types";
 
-export default function DashboardHome() {
-  const router = useRouter();
-  const [data, setData] = useState<any>(null);
-  const [alerts, setAlerts] = useState<any>(null);
+export default function DashboardOverview() {
+  const [summary, setSummary] = useState<DashboardSummary | null>(null);
+  const [alerts, setAlerts] = useState<AlertStatus | null>(null);
   const [loading, setLoading] = useState(true);
-  const [fetchError, setFetchError] = useState(false);
-  const [reviewCountAnimated, setReviewCountAnimated] = useState(0);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  const countRef = useRef(false);
-
-  const [chatMessages, setChatMessages] = useState<{ role: string; content: string }[]>([]);
-  const [chatInput, setChatInput] = useState("");
-  const [chatLoading, setChatLoading] = useState(false);
-  const chatLogEndRef = useRef<HTMLDivElement>(null);
-
-  const fetchData = async () => {
-    const token = localStorage.getItem("bizinsight_token");
-    if (!token) {
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    setFetchError(false);
-    try {
-      const [summary, risk] = await Promise.all([api.getSummary(token), api.getAlerts(token)]);
-      setData(summary);
-      setAlerts(risk);
-      setLastUpdated(new Date());
-    } catch (err: any) {
-      if (err?.message?.toLowerCase().includes("token") || err?.message?.toLowerCase().includes("log in") || err?.message?.toLowerCase().includes("invalid")) {
-        localStorage.removeItem("bizinsight_token");
-        localStorage.removeItem("bizinsight_user");
-        router.push("/");
-        return;
-      }
-      setFetchError(true);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => { fetchData(); }, []);
-
-  // Animate review count
-  useEffect(() => {
-    if (loading || countRef.current || !data) return;
-    countRef.current = true;
-    const target = data.total_reviews;
-    if (target === 0) { setReviewCountAnimated(0); return; }
-    const dur = 1000, start = performance.now();
-    function tick(now: number) {
-      const t = Math.min(1, (now - start) / dur);
-      setReviewCountAnimated(Math.floor(t * target));
-      if (t < 1) requestAnimationFrame(tick);
-    }
-    requestAnimationFrame(tick);
-  }, [loading, data]);
-
-  const handleChatSend = async (text: string) => {
-    if (!text.trim() || chatLoading) return;
-    setChatMessages(prev => [...prev, { role: "user", content: text }]);
-    setChatInput("");
-    setChatLoading(true);
-    const token = localStorage.getItem("bizinsight_token") || "";
-    try {
-      const res = await api.chat(token, { question: text, use_memory: false });
-      setChatMessages(prev => [...prev, { role: "assistant", content: res.answer }]);
-    } catch {
-      const fallbackMsg = "⚠️ The backend service might not be loaded properly or is spinning up due to the Render free-tier setup (takes ~30-50 seconds to wake from sleep).\n\nPlease wait a moment and try again!";
-      setChatMessages(prev => [...prev, { role: "assistant", content: fallbackMsg }]);
-    } finally {
-      setChatLoading(false);
-      setTimeout(() => chatLogEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
-    }
-  };
-
-  const [exportError, setExportError] = useState<string | null>(null);
+  const [error, setError] = useState("");
   const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState("");
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const [s, a] = await Promise.all([api.getSummary(), api.getAlerts()]);
+      setSummary(s);
+      setAlerts(a);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not load the dashboard.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
 
   const handleExport = async () => {
-    const token = localStorage.getItem("bizinsight_token");
-    if (!token) return;
-    setExportError(null);
     setExporting(true);
+    setExportError("");
     try {
-      const res = await fetch(api.getExportUrl(token));
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        setExportError(err.detail || "Export failed. Please try again.");
-        setTimeout(() => setExportError(null), 5000);
-        return;
-      }
-      const blob = await res.blob();
+      const blob = await api.exportReviews();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "bizinsight_feedback.csv";
-      document.body.appendChild(a);
+      a.download = `bizinsight-reviews-${new Date().toISOString().slice(0, 10)}.csv`;
       a.click();
-      a.remove();
       URL.revokeObjectURL(url);
-    } catch {
-      setExportError("Network error. Could not reach the server.");
-      setTimeout(() => setExportError(null), 5000);
+    } catch (err) {
+      setExportError(err instanceof Error ? err.message : "Export failed.");
     } finally {
       setExporting(false);
     }
   };
 
-  // Format "last updated" relative time
-  const getRelativeTime = () => {
-    if (!lastUpdated) return "";
-    const diff = Math.floor((Date.now() - lastUpdated.getTime()) / 1000);
-    if (diff < 60) return "just now";
-    if (diff < 3600) return `${Math.floor(diff / 60)} minutes ago`;
-    return `${Math.floor(diff / 3600)} hours ago`;
-  };
+  if (loading) return <LoadingState label="Loading dashboard…" />;
 
-  if (loading) {
-    return (<div className="min-h-[60vh] flex flex-col items-center justify-center gap-3"><RefreshCw className="animate-spin text-zinc-400" size={24} /><p className="text-sm text-zinc-500">Loading dashboard...</p></div>);
-  }
-
-  // Check if user has no data (either API returned 0 reviews, or API failed)
-  const hasNoData = !data || data.total_reviews === 0;
-
-  // Empty state — user hasn't uploaded anything yet
-  if (hasNoData && !fetchError) {
+  if (error || !summary || !alerts) {
     return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-6 text-center">
-        <div className="w-16 h-16 rounded-2xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
-          <BarChart2 size={28} className="text-zinc-400" />
-        </div>
-        <div>
-          <h2 className="text-xl font-semibold tracking-tight mb-2">No data yet</h2>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 max-w-sm">Upload a CSV file with your customer reviews to see sentiment analysis, trends, and insights here.</p>
-        </div>
-        <Link href="/dashboard/upload" className="text-sm font-medium px-6 py-2.5 rounded-lg bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:opacity-90 transition-opacity flex items-center gap-2">
-          <Upload size={16} /> Upload your first CSV
-        </Link>
+      <div className="mx-auto max-w-lg pt-16">
+        <ErrorBanner
+          message={error || "Could not load the dashboard."}
+          action={
+            <button type="button" onClick={load} className="font-medium underline underline-offset-2">
+              Retry
+            </button>
+          }
+        />
       </div>
     );
   }
 
-  // Error state — backend unreachable
-  if (fetchError && hasNoData) {
+  if (summary.total_reviews === 0) {
     return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-6 text-center">
-        <div className="w-16 h-16 rounded-2xl bg-red-50 dark:bg-red-950/30 flex items-center justify-center">
-          <AlertCircle size={28} className="text-red-500" />
-        </div>
-        <div>
-          <h2 className="text-xl font-semibold tracking-tight mb-2">Couldn&apos;t load dashboard</h2>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 max-w-sm">The backend service may be starting up (free-tier cold starts take ~30-50s). Please wait a moment and try again.</p>
-        </div>
-        <button onClick={() => { countRef.current = false; fetchData(); }} className="text-sm font-medium px-6 py-2.5 rounded-lg bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:opacity-90 transition-opacity flex items-center gap-2">
-          <RefreshCw size={16} /> Retry
-        </button>
-      </div>
+      <EmptyState
+        icon={<BarChart3 size={26} />}
+        title="No data yet"
+        description="Upload a CSV of customer reviews to see sentiment, trends, risk and keywords here."
+        action={
+          <Link href="/dashboard/upload" className="btn-primary">
+            <Upload size={16} /> Upload your first CSV
+          </Link>
+        }
+      />
     );
   }
 
-  // We have real data — render the dashboard
-  const d = data;
-  const a = alerts || { risk_level: "low", negative_percent: 0, threshold: 40, total_reviews: 0, top_issues: [] };
-  const riskColor = a.risk_level === "high" ? "text-red-500" : a.risk_level === "medium" ? "text-amber-500" : "text-emerald-600 dark:text-emerald-400";
+  const risk = RISK_STYLES[alerts.risk_level] ?? RISK_STYLES.low;
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="text-2xl font-semibold tracking-tight">Dashboard</h2>
-          {lastUpdated && <p className="text-sm text-zinc-500 dark:text-zinc-400">Last updated {getRelativeTime()}</p>}
-        </div>
-        <div className="flex items-center gap-2">
-          <Link href="/dashboard/upload" className="text-sm font-medium px-4 py-2 rounded-lg bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:opacity-90 transition-opacity flex items-center gap-1.5">
-            <Upload size={14} /> Import CSV
-          </Link>
-          <button onClick={handleExport} disabled={exporting} className="text-sm font-medium px-4 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors flex items-center gap-1.5 disabled:opacity-50">
-            {exporting && <RefreshCw className="animate-spin text-zinc-400" size={14} />}
-            {exporting ? "Exporting..." : "Export report"}
-          </button>
-        </div>
-      </div>
-
-      {exportError && (
-        <div className="mb-6 p-4 rounded-xl border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 flex items-center justify-center shrink-0">
-              <AlertCircle size={18} />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-red-900 dark:text-red-200">{exportError}</p>
-              <p className="text-xs text-red-600/80 dark:text-red-400/80 mt-0.5">You need to upload at least one CSV dataset before generating reports.</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <Link href="/dashboard/upload" className="text-xs font-medium px-3 py-1.5 rounded-lg bg-red-600 dark:bg-red-500 text-white hover:opacity-90 transition-opacity">
-              Upload Reviews
-            </Link>
-            <button onClick={() => setExportError(null)} className="text-xs text-red-500 hover:text-red-700 dark:hover:text-red-300 px-2 py-1">
-              Dismiss
+    <div className="space-y-6">
+      <PageHeader
+        title="Overview"
+        description={`${summary.total_reviews.toLocaleString()} reviews analyzed`}
+        actions={
+          <>
+            <button type="button" onClick={load} className="btn-secondary" aria-label="Refresh">
+              <RefreshCw size={14} />
             </button>
-          </div>
-        </div>
-      )}
+            <button type="button" onClick={handleExport} disabled={exporting} className="btn-secondary">
+              {exporting ? <Spinner size={14} /> : <Download size={14} />} Export CSV
+            </button>
+            <Link href="/dashboard/upload" className="btn-primary">
+              <Upload size={14} /> Import CSV
+            </Link>
+          </>
+        }
+      />
 
-      {/* Metrics */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-        <div className="border border-zinc-200 dark:border-zinc-800 rounded-xl p-5">
-          <div className="text-xs text-zinc-500 dark:text-zinc-400 mb-2">Avg. sentiment</div>
-          <div className="text-2xl font-semibold">{d.avg_sentiment > 0 ? "+" : ""}{d.avg_sentiment.toFixed(2)}</div>
-          <div className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">{d.positive_percent.toFixed(0)}% positive</div>
-        </div>
-        <div className="border border-zinc-200 dark:border-zinc-800 rounded-xl p-5">
-          <div className="text-xs text-zinc-500 dark:text-zinc-400 mb-2">Reviews analyzed</div>
-          <div className="text-2xl font-semibold">{reviewCountAnimated.toLocaleString()}</div>
-          <div className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">{d.negative_count} negative · {d.neutral_count} neutral</div>
-        </div>
-        <div className="border border-zinc-200 dark:border-zinc-800 rounded-xl p-5">
-          <div className="text-xs text-zinc-500 dark:text-zinc-400 mb-2">Risk level</div>
-          <div className={`text-2xl font-semibold uppercase ${riskColor}`}>{a.risk_level}</div>
-          <div className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">{a.negative_percent.toFixed(1)}% negative rate</div>
-        </div>
-        <div className="border border-zinc-200 dark:border-zinc-800 rounded-xl p-5">
-          <div className="text-xs text-zinc-500 dark:text-zinc-400 mb-2">Negative spike</div>
-          <div className="text-2xl font-semibold">{a.risk_level === "high" ? "Detected" : "None"}</div>
-          <div className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">threshold: ≥{a.threshold || 40}% negative</div>
-        </div>
+      {exportError && <ErrorBanner message={exportError} />}
+
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <StatCard
+          label="Avg. sentiment"
+          value={formatScore(summary.avg_sentiment)}
+          valueClassName={sentimentColor(summary.avg_sentiment)}
+          hint="Scale −1 (negative) to +1 (positive)"
+        />
+        <StatCard
+          label="Reviews analyzed"
+          value={summary.total_reviews.toLocaleString()}
+          hint={`${summary.positive_count.toLocaleString()} positive · ${summary.negative_count.toLocaleString()} negative`}
+        />
+        <StatCard
+          label="Risk level"
+          value={risk.label}
+          valueClassName={risk.text}
+          hint={`${alerts.negative_percent.toFixed(1)}% negative reviews`}
+        />
+        <StatCard
+          label="Negative spike"
+          value={alerts.risk_level === "high" ? "Detected" : "None"}
+          valueClassName={alerts.risk_level === "high" ? risk.text : undefined}
+          hint={`Alert at ≥ ${alerts.threshold}% negative`}
+        />
       </div>
 
-      {/* Chart area + Keywords */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mb-6">
-        <div className="lg:col-span-2 border border-zinc-200 dark:border-zinc-800 rounded-xl p-5">
-          <h3 className="text-sm font-medium mb-4">Satisfaction trend <span className="text-zinc-400 dark:text-zinc-500 font-normal">· from your data</span></h3>
-          <SatisfactionChart trendData={d.trend} />
-        </div>
-        <div className="border border-zinc-200 dark:border-zinc-800 rounded-xl p-5">
-          <h3 className="text-sm font-medium mb-4">Top complaint keywords</h3>
-          <div className="flex flex-wrap gap-2">
-            {d.top_keywords && d.top_keywords.length > 0 ? (
-              d.top_keywords.map((kw: any, idx: number) => (
-                <span key={idx} className={`text-xs px-3 py-1.5 rounded-full ${idx < 2 ? "bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400" : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400"}`}>
-                  {kw.keyword} <span className="opacity-60">({kw.frequency})</span>
+      <div className="grid gap-3 lg:grid-cols-3">
+        <section className="card p-5 lg:col-span-2">
+          <h2 className="text-sm font-semibold">Sentiment trend</h2>
+          <p className="muted mb-4 text-xs">Average sentiment per day</p>
+          <SentimentTrendChart data={summary.trend} />
+        </section>
+
+        <section className="card p-5">
+          <h2 className="text-sm font-semibold">Sentiment split</h2>
+          <p className="muted mb-4 text-xs">Share of all reviews</p>
+          <SentimentSplit summary={summary} />
+        </section>
+      </div>
+
+      <div className="grid gap-3 lg:grid-cols-3">
+        <section className="card p-5">
+          <h2 className="text-sm font-semibold">Top keywords</h2>
+          <p className="muted mb-4 text-xs">Most frequent terms across all reviews</p>
+          {summary.top_keywords.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {summary.top_keywords.map((kw) => (
+                <span key={kw.keyword} className="rounded-full bg-zinc-100 px-3 py-1 text-xs dark:bg-zinc-800">
+                  {kw.keyword} <span className="muted">· {kw.frequency}</span>
                 </span>
-              ))
-            ) : (
-              <p className="text-xs text-zinc-400">No keywords extracted yet.</p>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Top issues from alerts */}
-      {a.top_issues && a.top_issues.length > 0 && (
-        <div className="mb-6">
-          <h3 className="text-sm font-medium mb-3">Top negative issues</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            {a.top_issues.map((issue: string, i: number) => (
-              <div key={i} className="border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 hover:shadow-lg transition-shadow">
-                <div className="text-xs text-zinc-400 dark:text-zinc-500 mb-1">ISSUE #{i + 1}</div>
-                <h4 className="font-medium text-sm">{issue}</h4>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Chat */}
-      <div className="border border-zinc-200 dark:border-zinc-800 rounded-xl p-5">
-        <h3 className="text-sm font-medium mb-4">Ask your data <span className="text-zinc-400 dark:text-zinc-500 font-normal">· grounded only in your reviews</span></h3>
-        <div className="flex flex-col gap-3 mb-4 max-h-48 overflow-y-auto pr-2 no-scrollbar">
-          {chatMessages.length === 0 && (
-            <p className="text-xs text-zinc-400 dark:text-zinc-500 text-center py-4">Ask a question about your uploaded reviews to get started.</p>
-          )}
-          {chatMessages.map((m, idx) => (
-            <div key={idx} className={`max-w-[80%] text-sm px-4 py-2 rounded-2xl ${m.role === "user" ? "self-end bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-br-sm" : "self-start bg-zinc-100 dark:bg-zinc-800 rounded-bl-sm"}`}>
-              {m.content}
+              ))}
             </div>
-          ))}
-          {chatLoading && (<div className="self-start max-w-[80%] bg-zinc-100 dark:bg-zinc-800 text-xs px-4 py-2 rounded-2xl rounded-bl-sm text-zinc-500 flex items-center gap-2"><RefreshCw className="animate-spin" size={12} /> Evaluating context...</div>)}
-          <div ref={chatLogEndRef} />
-        </div>
-        <form onSubmit={e => { e.preventDefault(); handleChatSend(chatInput); }} className="flex gap-2">
-          <input type="text" value={chatInput} onChange={e => setChatInput(e.target.value)} placeholder="Ask a question about your reviews…" className="flex-1 border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white" disabled={chatLoading} />
-          <button type="submit" disabled={chatLoading || !chatInput.trim()} className="px-4 py-2 rounded-lg bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50">Ask</button>
-        </form>
+          ) : (
+            <p className="muted text-sm">No keywords extracted.</p>
+          )}
+        </section>
+
+        <section className="card p-5">
+          <h2 className="text-sm font-semibold">Top negative issues</h2>
+          <p className="muted mb-4 text-xs">Most frequent terms in negative reviews</p>
+          {alerts.top_issues.length > 0 ? (
+            <ol className="space-y-2">
+              {alerts.top_issues.map((issue, i) => (
+                <li key={issue} className="flex items-center gap-3 text-sm">
+                  <span className="muted w-4 text-xs tabular-nums">{i + 1}</span>
+                  <span className="capitalize">{issue}</span>
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <p className="muted text-sm">No negative issues found.</p>
+          )}
+        </section>
+
+        <section className="card flex flex-col justify-between p-5">
+          <div>
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-zinc-100 dark:bg-zinc-800">
+              <MessageSquare size={17} />
+            </div>
+            <h2 className="mt-4 text-sm font-semibold">Ask your data</h2>
+            <p className="muted mt-1 text-sm">
+              Get AI summaries of what customers are saying, grounded only in your reviews.
+            </p>
+          </div>
+          <Link href="/dashboard/chat" className="btn-secondary mt-4 self-start">
+            Open AI assistant <ArrowRight size={14} />
+          </Link>
+        </section>
       </div>
     </div>
   );
 }
 
-/** Canvas-based satisfaction chart using real trend data from API */
-function SatisfactionChart({ trendData }: { trendData?: { date: string; avg_sentiment: number }[] }) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  const draw = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const parent = canvas.parentElement;
-    if (!parent) return;
-    const w = canvas.width = parent.clientWidth - 40;
-    const h = canvas.height = 200;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    ctx.clearRect(0, 0, w, h);
-
-    const isDark = document.documentElement.classList.contains("dark");
-
-    // Use real trend data if available
-    const pts = trendData && trendData.length > 0
-      ? trendData.map(t => t.avg_sentiment)
-      : [];
-
-    if (pts.length === 0) {
-      // No data — show empty state
-      ctx.fillStyle = isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.3)";
-      ctx.font = "13px system-ui, sans-serif";
-      ctx.textAlign = "center";
-      ctx.fillText("No trend data yet — upload reviews to see the chart", w / 2, h / 2);
-      return;
-    }
-
-    const dataMin = Math.min(...pts);
-    const dataMax = Math.max(...pts);
-    const range = dataMax - dataMin || 0.1;
-    const min = dataMin - range * 0.15;
-    const max = dataMax + range * 0.15;
-    const pad = 10;
-    const stepX = pts.length > 1 ? (w - pad * 2) / (pts.length - 1) : 0;
-
-    // Grid lines
-    ctx.strokeStyle = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)";
-    for (let i = 0; i <= 3; i++) {
-      const y = pad + ((h - pad * 2) / 3) * i;
-      ctx.beginPath(); ctx.moveTo(pad, y); ctx.lineTo(w - pad, y); ctx.stroke();
-    }
-
-    // Data line
-    ctx.beginPath();
-    pts.forEach((v, i) => {
-      const x = pad + i * stepX;
-      const y = h - pad - ((v - min) / (max - min)) * (h - pad * 2);
-      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-    });
-    ctx.strokeStyle = isDark ? "#ffffff" : "#18181b";
-    ctx.lineWidth = 2;
-    ctx.stroke();
-  };
-
-  useEffect(() => {
-    draw();
-    window.addEventListener("resize", draw);
-    const observer = new MutationObserver(draw);
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
-    return () => { window.removeEventListener("resize", draw); observer.disconnect(); };
-  }, [trendData]);
-
-  return <canvas ref={canvasRef} className="w-full" style={{ height: 200 }} />;
+function SentimentSplit({ summary }: { summary: DashboardSummary }) {
+  const segments = [
+    { label: "Positive", pct: summary.positive_percent, count: summary.positive_count, color: "bg-emerald-500" },
+    { label: "Neutral", pct: summary.neutral_percent, count: summary.neutral_count, color: "bg-zinc-300 dark:bg-zinc-600" },
+    { label: "Negative", pct: summary.negative_percent, count: summary.negative_count, color: "bg-red-500" },
+  ];
+  return (
+    <div>
+      <div className="flex h-3 gap-0.5 overflow-hidden rounded-full" role="img" aria-label="Sentiment distribution">
+        {segments
+          .filter((s) => s.pct > 0)
+          .map((s) => (
+            <div key={s.label} className={s.color} style={{ width: `${s.pct}%` }} title={`${s.label}: ${s.pct.toFixed(1)}%`} />
+          ))}
+      </div>
+      <dl className="mt-5 space-y-3">
+        {segments.map((s) => (
+          <div key={s.label} className="flex items-center justify-between text-sm">
+            <dt className="flex items-center gap-2">
+              <span className={`h-2.5 w-2.5 rounded-sm ${s.color}`} aria-hidden="true" />
+              {s.label}
+            </dt>
+            <dd className="tabular-nums">
+              {s.pct.toFixed(1)}% <span className="muted text-xs">({s.count.toLocaleString()})</span>
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  );
 }

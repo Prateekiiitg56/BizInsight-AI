@@ -1,130 +1,286 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { api } from "@/lib/api-client";
-import { Upload, FileText, CheckCircle, AlertCircle, ArrowRight, ChevronLeft, ChevronRight, RefreshCw, Trash2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ChevronLeft, ChevronRight, FileText, Trash2, Upload, X } from "lucide-react";
 import Link from "next/link";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ErrorBanner, formatScore, PageHeader, sentimentColor, Spinner } from "@/components/ui";
+import { api } from "@/lib/api-client";
+import type { ReviewItem, UploadSummary } from "@/lib/types";
+import { cn } from "@/lib/utils";
+
+const PAGE_SIZE = 10;
+const MAX_MB = 10;
 
 export default function UploadPage() {
   const [file, setFile] = useState<File | null>(null);
+  const [dragging, setDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<UploadSummary | null>(null);
   const [error, setError] = useState("");
-  const [clearing, setClearing] = useState(false);
-  const [reviews, setReviews] = useState<any[]>([]);
+
+  const [reviews, setReviews] = useState<ReviewItem[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
-  const [loadingReviews, setLoadingReviews] = useState(false);
+  const [loadingReviews, setLoadingReviews] = useState(true);
+  const [reviewsError, setReviewsError] = useState("");
+  const [clearing, setClearing] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  const fetchReviews = async () => {
-    const token = localStorage.getItem("bizinsight_token");
-    if (!token) return;
+  const fetchReviews = useCallback(async (p: number) => {
     setLoadingReviews(true);
-    try { const res = await api.getReviews(token, page, 8); setReviews(res.reviews); setTotal(res.total); } catch {} finally { setLoadingReviews(false); }
+    setReviewsError("");
+    try {
+      const res = await api.getReviews(p, PAGE_SIZE);
+      setReviews(res.reviews);
+      setTotal(res.total);
+    } catch (err) {
+      setReviewsError(err instanceof Error ? err.message : "Could not load reviews.");
+    } finally {
+      setLoadingReviews(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchReviews(page);
+  }, [page, fetchReviews]);
+
+  const selectFile = (f: File | undefined) => {
+    setResult(null);
+    setError("");
+    if (!f) return;
+    if (!f.name.toLowerCase().endsWith(".csv")) return setError("Please choose a .csv file.");
+    if (f.size > MAX_MB * 1024 * 1024) return setError(`File is too large. The limit is ${MAX_MB} MB.`);
+    setFile(f);
   };
 
-  useEffect(() => { fetchReviews(); }, [page]);
+  const clearFile = () => {
+    setFile(null);
+    if (inputRef.current) inputRef.current.value = "";
+  };
 
-  const handleUpload = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleUpload = async () => {
     if (!file) return;
-    setUploading(true); setError(""); setResult(null);
-    const token = localStorage.getItem("bizinsight_token");
-    if (!token) return;
-    try { const res = await api.uploadReviews(token, file); setResult(res); setFile(null); setPage(1); fetchReviews(); } catch (err: any) { setError(err.message || "Upload failed."); } finally { setUploading(false); }
+    setUploading(true);
+    setError("");
+    try {
+      setResult(await api.uploadReviews(file));
+      clearFile();
+      if (page === 1) fetchReviews(1);
+      else setPage(1);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Upload failed.");
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleClear = async () => {
-    if (!confirm("Clear all reviews? This is permanent.")) return;
+    if (!window.confirm(`Delete all ${total.toLocaleString()} reviews? This cannot be undone.`)) return;
     setClearing(true);
-    const token = localStorage.getItem("bizinsight_token");
-    if (!token) return;
-    try { await api.clearReviews(token); setReviews([]); setTotal(0); setPage(1); setResult(null); } catch (err: any) { setError(err.message || "Failed."); } finally { setClearing(false); }
+    try {
+      await api.clearReviews();
+      setReviews([]);
+      setTotal(0);
+      setPage(1);
+      setResult(null);
+    } catch (err) {
+      setReviewsError(err instanceof Error ? err.message : "Could not clear reviews.");
+    } finally {
+      setClearing(false);
+    }
   };
+
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
     <div>
-      <div className="mb-6">
-        <h2 className="text-2xl font-semibold tracking-tight">Data Upload</h2>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">Upload reviews as CSV. Requires a column named <code className="font-mono bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded text-xs">review</code>.</p>
-      </div>
+      <PageHeader
+        title="Data upload"
+        description="Upload customer reviews as a CSV file with a column named “review”."
+      />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Upload */}
+      <div className="grid gap-6 lg:grid-cols-2">
         <div className="space-y-4">
-          <div className="border border-zinc-200 dark:border-zinc-800 rounded-xl p-6">
-            <form onSubmit={handleUpload} className="space-y-4">
-              <div className="border-2 border-dashed border-zinc-200 dark:border-zinc-700 rounded-xl p-10 flex flex-col items-center justify-center">
-                <input type="file" id="csv-input" className="hidden" accept=".csv" onChange={e => { if (e.target.files?.[0]) { setFile(e.target.files[0]); setError(""); setResult(null); } }} />
-                {file ? (
-                  <div className="text-center"><p className="text-sm font-semibold">{file.name}</p><p className="text-xs text-zinc-500 mt-1">{(file.size / 1024).toFixed(1)} KB</p></div>
-                ) : (
-                  <label htmlFor="csv-input" className="cursor-pointer text-center"><Upload size={20} className="mx-auto mb-3 text-zinc-400" /><p className="text-sm font-medium">Drop CSV here or <span className="text-zinc-900 dark:text-white underline">browse</span></p><p className="text-xs text-zinc-400 mt-1">CSV format only</p></label>
-                )}
-              </div>
-              {error && <div className="p-3 rounded-lg bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-xs text-red-600 dark:text-red-400 flex items-start gap-2"><AlertCircle size={14} className="mt-0.5 shrink-0" />{error}</div>}
-              {file && (
-                <div className="flex gap-2">
-                  <button type="submit" disabled={uploading} className="flex-1 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-lg py-2.5 text-sm font-medium hover:opacity-90 disabled:opacity-50">{uploading ? "Processing..." : "Upload & Analyze"}</button>
-                  <button type="button" onClick={() => setFile(null)} disabled={uploading} className="px-4 py-2.5 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800">Clear</button>
-                </div>
+          <section className="card p-5">
+            <div
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDragging(true);
+              }}
+              onDragLeave={() => setDragging(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setDragging(false);
+                selectFile(e.dataTransfer.files?.[0]);
+              }}
+              className={cn(
+                "flex flex-col items-center justify-center rounded-xl border-2 border-dashed px-6 py-10 text-center transition",
+                dragging
+                  ? "border-zinc-900 bg-zinc-50 dark:border-white dark:bg-zinc-800/50"
+                  : "border-zinc-200 dark:border-zinc-700"
               )}
-            </form>
-          </div>
+            >
+              <input
+                ref={inputRef}
+                id="csv-input"
+                type="file"
+                accept=".csv,text/csv"
+                className="sr-only"
+                onChange={(e) => selectFile(e.target.files?.[0])}
+              />
+              {file ? (
+                <div className="flex items-center gap-3 rounded-lg bg-zinc-100 px-4 py-3 text-left dark:bg-zinc-800">
+                  <FileText size={20} className="shrink-0 text-zinc-500" />
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium">{file.name}</p>
+                    <p className="muted text-xs">{(file.size / 1024).toFixed(1)} KB</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={clearFile}
+                    disabled={uploading}
+                    className="ml-2 rounded p-1 text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
+                    aria-label="Remove file"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <Upload size={22} className="mb-3 text-zinc-400" />
+                  <p className="text-sm font-medium">
+                    Drag & drop a CSV, or{" "}
+                    <label htmlFor="csv-input" className="cursor-pointer underline underline-offset-4">
+                      browse
+                    </label>
+                  </p>
+                  <p className="muted mt-1 text-xs">CSV only · up to {MAX_MB} MB</p>
+                </>
+              )}
+            </div>
+
+            {error && (
+              <div className="mt-4">
+                <ErrorBanner message={error} />
+              </div>
+            )}
+
+            <button type="button" onClick={handleUpload} disabled={!file || uploading} className="btn-primary mt-4 w-full py-2.5">
+              {uploading ? <Spinner /> : <Upload size={16} />}
+              {uploading ? "Analyzing reviews…" : "Upload & analyze"}
+            </button>
+          </section>
 
           {result && (
-            <div className="border border-emerald-200 dark:border-emerald-500/20 rounded-xl p-5 bg-emerald-50/50 dark:bg-emerald-500/5">
-              <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 mb-3"><CheckCircle size={16} /><h3 className="font-semibold text-sm">Upload Complete</h3></div>
-              <div className="grid grid-cols-4 gap-3 text-center text-xs mb-4">
-                <div><div className="text-zinc-500">Processed</div><div className="text-lg font-semibold mt-0.5">{result.total_processed}</div></div>
-                <div><div className="text-zinc-500">Positive</div><div className="text-lg font-semibold text-emerald-600 mt-0.5">{result.positive}</div></div>
-                <div><div className="text-zinc-500">Negative</div><div className="text-lg font-semibold text-red-500 mt-0.5">{result.negative}</div></div>
-                <div><div className="text-zinc-500">Risk</div><div className={`text-lg font-semibold mt-0.5 ${result.alert_triggered ? "text-red-500" : ""}`}>{result.negative_percent}%</div></div>
+            <section className="card border-emerald-200 p-5 dark:border-emerald-500/30">
+              <div className="mb-4 flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
+                <CheckCircle2 size={16} />
+                <h2 className="text-sm font-semibold">
+                  {result.total_processed.toLocaleString()} reviews analyzed
+                </h2>
               </div>
-              {result.alert_triggered && <div className="p-3 rounded-lg bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-xs text-red-600 dark:text-red-400 mb-3">⚠️ Spike Alert: Negative ratio exceeds 40% threshold.</div>}
-              <Link href="/dashboard" className="block w-full text-center bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-lg py-2.5 text-sm font-medium hover:opacity-90">View Dashboard →</Link>
-            </div>
+              <dl className="grid grid-cols-4 gap-3 text-center">
+                {[
+                  ["Positive", result.positive, "text-emerald-600 dark:text-emerald-400"],
+                  ["Neutral", result.neutral, ""],
+                  ["Negative", result.negative, "text-red-600 dark:text-red-400"],
+                  ["Negative %", `${result.negative_percent}%`, result.alert_triggered ? "text-red-600 dark:text-red-400" : ""],
+                ].map(([label, value, color]) => (
+                  <div key={label as string}>
+                    <dt className="muted text-xs">{label}</dt>
+                    <dd className={cn("mt-0.5 text-lg font-semibold tabular-nums", color as string)}>{value}</dd>
+                  </div>
+                ))}
+              </dl>
+              {result.alert_triggered && (
+                <p className="mt-4 flex items-center gap-2 rounded-lg bg-red-50 p-3 text-xs text-red-700 dark:bg-red-500/10 dark:text-red-300">
+                  <AlertTriangle size={14} className="shrink-0" />
+                  High risk: negative reviews in this file exceed the alert threshold.
+                </p>
+              )}
+              <Link href="/dashboard" className="btn-primary mt-4 w-full">
+                View dashboard
+              </Link>
+            </section>
           )}
+
+          <section className="card p-5 text-sm">
+            <h2 className="font-semibold">CSV format</h2>
+            <p className="muted mt-1 text-xs">One review per row. Other columns are ignored.</p>
+            <pre className="mt-3 overflow-x-auto rounded-lg bg-zinc-100 p-3 text-xs dark:bg-zinc-800">
+{`review
+"Delivery was two days late."
+"Great quality, would buy again!"`}
+            </pre>
+          </section>
         </div>
 
-        {/* Database */}
-        <div className="border border-zinc-200 dark:border-zinc-800 rounded-xl p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-sm">Reviews Database</h3>
-            <span className="text-xs text-zinc-500">{total} items</span>
+        <section className="card flex flex-col p-5">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-sm font-semibold">Your reviews</h2>
+            <span className="muted text-xs">{total.toLocaleString()} total</span>
           </div>
+
+          {reviewsError && <ErrorBanner message={reviewsError} />}
+
           {loadingReviews ? (
-            <div className="h-64 flex items-center justify-center"><RefreshCw className="animate-spin text-zinc-400" size={20} /></div>
+            <div className="flex h-64 items-center justify-center">
+              <Spinner size={20} className="text-zinc-400" />
+            </div>
           ) : reviews.length > 0 ? (
-            <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
+            <ul className="flex-1 divide-y divide-zinc-100 dark:divide-zinc-800">
               {reviews.map((r, i) => (
-                <div key={i} className="py-3">
-                  <p className="text-xs leading-relaxed line-clamp-2 italic">&ldquo;{r.review}&rdquo;</p>
-                  <div className="flex justify-between text-[10px] mt-1.5">
-                    <span className={r.sentiment > 0 ? "text-emerald-600" : r.sentiment < 0 ? "text-red-500" : "text-zinc-400"}>VADER: {r.sentiment > 0 ? "+" : ""}{r.sentiment.toFixed(2)}</span>
-                    <span className="text-zinc-400">{r.date?.split(" ")[0]}</span>
+                <li key={`${page}-${i}`} className="py-3">
+                  <p className="line-clamp-2 text-sm">{r.review}</p>
+                  <div className="mt-1 flex justify-between text-xs">
+                    <span className={cn("font-medium tabular-nums", sentimentColor(r.sentiment))}>
+                      {formatScore(r.sentiment)}
+                    </span>
+                    <span className="muted">{r.date.split(/[ T]/)[0]}</span>
                   </div>
-                </div>
+                </li>
               ))}
-            </div>
+            </ul>
           ) : (
-            <div className="h-64 flex flex-col items-center justify-center text-zinc-400 gap-2"><FileText size={24} /><span className="text-xs">Database empty. Upload a CSV above.</span></div>
-          )}
-          {total > 8 && (
-            <div className="flex items-center justify-between pt-3 border-t border-zinc-100 dark:border-zinc-800 mt-3">
-              <div className="flex gap-1">
-                <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="p-1.5 rounded border border-zinc-200 dark:border-zinc-700 disabled:opacity-30"><ChevronLeft size={14} /></button>
-                <button onClick={() => setPage(p => p + 1)} disabled={page * 8 >= total} className="p-1.5 rounded border border-zinc-200 dark:border-zinc-700 disabled:opacity-30"><ChevronRight size={14} /></button>
+            !reviewsError && (
+              <div className="muted flex h-64 flex-col items-center justify-center gap-2 text-sm">
+                <FileText size={22} />
+                No reviews yet. Upload a CSV to get started.
               </div>
-              <span className="text-xs text-zinc-500">Page {page} of {Math.ceil(total / 8)}</span>
+            )
+          )}
+
+          {total > 0 && (
+            <div className="mt-3 flex items-center justify-between border-t border-zinc-100 pt-3 dark:border-zinc-800">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => p - 1)}
+                  disabled={page === 1 || loadingReviews}
+                  className="btn-secondary p-1.5"
+                  aria-label="Previous page"
+                >
+                  <ChevronLeft size={14} />
+                </button>
+                <span className="muted text-xs tabular-nums">
+                  Page {page} of {totalPages}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => p + 1)}
+                  disabled={page >= totalPages || loadingReviews}
+                  className="btn-secondary p-1.5"
+                  aria-label="Next page"
+                >
+                  <ChevronRight size={14} />
+                </button>
+              </div>
+              <button type="button" onClick={handleClear} disabled={clearing} className="btn-danger px-3 py-1.5 text-xs">
+                {clearing ? <Spinner size={13} /> : <Trash2 size={13} />} Delete all
+              </button>
             </div>
           )}
-          {reviews.length > 0 && (
-            <div className="mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-800 flex justify-end">
-              <button onClick={handleClear} disabled={clearing} className="flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg border border-red-200 dark:border-red-500/20 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10"><Trash2 size={13} /> Clear Database</button>
-            </div>
-          )}
-        </div>
+        </section>
       </div>
     </div>
   );

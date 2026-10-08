@@ -1,33 +1,38 @@
 --extra-index-url https://download.pytorch.org/whl/cpu
-streamlit>=1.32.0
+
+# ─── API ──────────────────────────────────────────────────────────────────────
+fastapi>=0.110.0
+uvicorn[standard]>=0.29.0
+python-multipart>=0.0.9
+python-dotenv>=1.0.0
+pydantic>=2.6.0
+requests>=2.31.0
+
+# ─── Auth & Database ─────────────────────────────────────────────────────────
+bcrypt>=4.1.0
+PyJWT>=2.8.0
+psycopg2-binary>=2.9.9
+
+# ─── Data & Sentiment ────────────────────────────────────────────────────────
 pandas>=2.0.0
 numpy>=1.26.0
-matplotlib>=3.8.0
-scikit-learn
-nltk
-openai
-requests
-python-dotenv
-bcrypt
-reportlab
-fpdf
-transformers>=4.40.0
+scikit-learn>=1.4.0
+nltk>=3.8.1
+
+# ─── Clustering ──────────────────────────────────────────────────────────────
 torch>=2.2.0
-sentence-transformers>=2.2.0
-bertopic
-hdbscan
-umap-learn
-chromadb
-langchain
-langchain-community
-langchain-chroma
-langchain-openai
-langchain-huggingface
-fastembed
-fastapi
-uvicorn
-tf-keras
-google-auth>=2.29.0
-PyJWT>=2.8.0
-psycopg2-binary
-requests
+sentence-transformers>=2.7.0
+bertopic>=0.16.0
+hdbscan>=0.8.33
+umap-learn>=0.5.5
+
+# ─── RAG ─────────────────────────────────────────────────────────────────────
+chromadb>=0.5.0
+fastembed>=0.3.0
+langchain>=0.3.0,<2.0
+langchain-classic>=1.0.0,<2.0
+langchain-core>=0.3.0,<2.0
+langchain-community>=0.3.0
+langchain-chroma>=0.1.4
+langchain-openai>=0.2.0
+langchain-huggingface>=0.1.0

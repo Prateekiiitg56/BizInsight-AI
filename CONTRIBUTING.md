@@ -42,39 +42,27 @@ git remote add upstream https://github.com/Prateekiiitg56/BizInsight-AI.git
 git fetch upstream
 ```
 
-### 3. Create a Virtual Environment
+### 3. Run the Backend
 
 ```bash
-# Using venv
-python -m venv venv
-source venv/bin/activate        # macOS/Linux
-venv\Scripts\activate           # Windows (CMD) or .\venv\Scripts\Activate.ps1 (PowerShell)
-
-# OR using conda
-conda create --name bizinsight-env python=3.10 -y
-conda activate bizinsight-env
-```
-
-### 4. Install Dependencies
-
-```bash
+cd backend
+python -m venv .venv
+source .venv/bin/activate       # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-```
-
-### 5. Configure Environment Variables
-
-Create a `.env` file in the project root:
-
-```env
-OPENROUTER_API_KEY=your_api_key_here
+python download_model.py
+cp .env.example .env            # set JWT_SECRET; OPENROUTER_API_KEY is optional
+uvicorn bizinsight_api.main:app --port 8001 --reload
 ```
 
 > ⚠️ Never commit your `.env` file. It is already listed in `.gitignore`.
 
-### 6. Run the App
+### 4. Run the Frontend
 
 ```bash
-streamlit run app.py
+cd frontend
+cp .env.example .env.local      # NEXT_PUBLIC_API_URL=http://localhost:8001
+npm install
+npm run dev
 ```
 
 ---
@@ -83,16 +71,14 @@ streamlit run app.py
 
 ```
 BizInsight-AI/
-│
-├── app.py              # Main Streamlit application
-├── database.py         # SQLite database logic
-├── pdf_generator.py    # PDF report generation
-├── requirements.txt    # Python dependencies
-├── .env                # Local secrets (never commit)
-├── .gitignore
+├── backend/            # FastAPI API, RAG assistant, clustering, tests
+├── frontend/           # Next.js web app
+├── docs/               # Architecture notes
 ├── README.md
 └── CONTRIBUTING.md     # This file
 ```
+
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for how the pieces fit together.
 
 ---
 
@@ -155,7 +141,7 @@ fix(database): handle empty review strings on insert
 
 docs(readme): update installation steps for Windows
 
-refactor(pdf_generator): extract summary logic into helper function
+refactor(clustering): extract category mapping into helper function
 ```
 
 ### Rules
@@ -171,7 +157,8 @@ refactor(pdf_generator): extract summary logic into helper function
 ### Before Submitting
 
 - [ ] Your branch is up to date with `upstream/main`
-- [ ] All existing functionality still works (`streamlit run app.py`)
+- [ ] Backend tests pass (`cd backend && python -m pytest -q tests`)
+- [ ] Frontend checks pass (`cd frontend && npm run lint && npx tsc --noEmit && npm run build`)
 - [ ] Code follows the style guidelines below
 - [ ] You have tested your changes manually
 - [ ] No sensitive data (API keys, `.env`) is included
@@ -234,18 +221,18 @@ refactor(pdf_generator): extract summary logic into helper function
 
 - Group imports in this order, separated by a blank line:
   1. Standard library (`os`, `tempfile`)
-  2. Third-party (`streamlit`, `pandas`)
-  3. Local modules (`database`, `pdf_generator`)
+  2. Third-party (`fastapi`, `pandas`)
+  3. Local modules (`database`, `bizinsight_api`)
 
-### Streamlit-Specific
+### Frontend
 
-- Do not put heavy computation directly in the main script flow — wrap in functions
-- Use `st.session_state` for state that must persist across reruns
-- Avoid unnecessary `st.rerun()` calls
+- TypeScript everywhere; add response types to `frontend/src/lib/types.ts`
+- Call the backend only through `frontend/src/lib/api-client.ts`
+- Reuse the shared styles in `globals.css` (`.card`, `.btn-primary`, `.input`, …) and components in `src/components`
 
 ### Security
 
-- **Never hardcode API keys** — always use `st.secrets` or `.env`
+- **Never hardcode API keys** — always use environment variables (`.env`)
 - **Never commit** `.env`, `bizinsight.db`, or any file with credentials
 - Validate all user inputs before writing to the database
 
@@ -253,7 +240,7 @@ refactor(pdf_generator): extract summary logic into helper function
 
 ## 🧪 Testing Requirements
 
-Currently the project uses **manual testing**. Before submitting a PR, verify the following:
+The backend has a pytest suite in `backend/tests` that CI runs on every pull request — add tests for any backend change. Also verify the following manually for UI changes:
 
 ### Manual Checklist
 
@@ -262,9 +249,9 @@ Currently the project uses **manual testing**. Before submitting a PR, verify th
 | **Data Upload** | Upload `reviews.csv` — confirm rows appear in the dashboard |
 | **Sentiment** | Verify positive/negative counts update correctly |
 | **Empty Input** | Upload a CSV with blank reviews — confirm graceful error handling |
-| **PDF Report** | Click "Generate PDF Report" — confirm download works and chart appears |
+| **Export** | Click "Export CSV" on the dashboard — confirm the download contains your reviews |
 | **AI Assistant** | Enter a question — confirm a valid AI response is returned |
-| **Clear Data** | Click "Clear all stored feedback" — confirm data is removed |
+| **Clear Data** | Click "Delete all" on the upload page — confirm data is removed |
 | **Edge Cases** | Upload a CSV missing the `review` column — confirm error message displays |
 
 ### CSV Format for Testing
@@ -276,7 +263,7 @@ review
 "Average quality, nothing special."
 ```
 
-> 💡 If you add new features, document the manual test steps in your PR description. Automated tests (pytest) are on the roadmap and contributions in this area are especially welcome.
+> 💡 If you add new features, document the manual test steps in your PR description.
 
 ---
 

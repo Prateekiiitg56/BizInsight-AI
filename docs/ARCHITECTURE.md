@@ -1,83 +1,82 @@
 # BizInsight AI — Architecture
 
-This document gives new contributors a quick mental model of how BizInsight AI is structured, how data flows through the system, and which files to open first.
+A quick mental model of how BizInsight AI fits together and which files to open first.
 
 ---
 
-## System Flow
+## System overview
 
 ```mermaid
-flowchart TD
-    A([User / Browser]) -->|Uploads CSV / asks questions| B[Streamlit UI\napp.py]
+flowchart LR
+    U([Browser]) --> FE[Next.js frontend<br/>frontend/src/app]
+    FE -->|REST + Bearer JWT| API[FastAPI<br/>bizinsight_api/main.py]
+    FE -->|Google ID token| GP[/api/auth/google<br/>Next.js proxy/]
+    GP --> API
 
-    B -->|Raw review text| C[Sentiment Engine\nVADER (NLTK)]
-    B -->|Structured query| D[AI Assistant\nDeepSeek via OpenRouter]
-    B -->|Read / write records| E[Data Layer\ndatabase.py · SQLite]
+    API --> AUTH[routes/auth.py]
+    API --> REV[routes/reviews.py]
+    API --> DASH[routes/dashboard.py]
+    API --> CL[routes/clustering.py]
+    API --> ADM[routes/admin.py]
+    API -->|lazy-mounted at /api/rag| RAG[rag_api/api.py]
 
-    C -->|Polarity scores| B
-    D -->|Business insights| B
-    E -->|Historical feedback| B
-
-    subgraph Analytics
-        C
-        F[Trend Tracker\nPandas + Matplotlib]
-        G[Issue Detector\nScikit-learn]
-    end
-
-    B --> F
-    B --> G
-    F -->|Charts| B
-    G -->|Top issues| B
+    REV --> SENT[sentiment.py<br/>VADER]
+    AUTH & REV & DASH & CL & ADM --> DB[(database.py<br/>SQLite / PostgreSQL)]
+    CL --> BT[clustering/<br/>BERTopic]
+    REV -->|background sync| IDX[rag_api/indexing.py]
+    RAG --> IDX
+    IDX --> VS[(ChromaDB<br/>vector_store.py)]
+    RAG --> LLM[OpenRouter LLM]
 ```
 
 ---
 
-## Layer Breakdown
+## Request flows
 
-### 1. Presentation — `app.py`
-The single entry point. Streamlit renders every page, widget, and chart here. It orchestrates all other layers: it calls the sentiment engine, queries the database, invokes the AI assistant, and passes data to the analytics helpers. If you want to change what users see or how they interact with the app, start here.
+**Upload.** `POST /api/reviews/upload` parses the CSV, scores each review with VADER, stores rows in the `feedback` table, and starts a background thread that rebuilds that user's vectors in ChromaDB.
 
-### 2. Sentiment Engine — VADER (NLTK)
-Runs automatically when a CSV is uploaded. Each review string is passed through VADER's compound scorer (NLTK), which returns a score between −1 (very negative) and +1 (very positive). The result is stored alongside the original review in SQLite for later trend queries.
+**Dashboard & alerts.** `GET /api/dashboard/summary` and `/alerts` aggregate the user's rows with pandas: counts, percentages, a daily average-sentiment trend, and top keywords (scikit-learn `CountVectorizer`). Risk is *high* at ≥ 40 % negative reviews and *medium* at ≥ 25 %.
 
-### 3. Analytics — Pandas, Matplotlib, Scikit-learn
-Three responsibilities live in this layer:
-- **Trend tracking**: Pandas aggregates sentiment scores by date; Matplotlib renders the time-series chart.
-- **Issue detection**: Scikit-learn (CountVectorizer) surfaces the most frequently mentioned words across all reviews.
-- All analytics are computed on demand inside `app.py`; there is no separate analytics module yet.
+**Clustering.** `POST /api/clustering/run` starts a background thread running `clustering/run_clustering.py` (sentence embeddings → UMAP → HDBSCAN via BERTopic, then mapping each topic to a business category by embedding similarity). The client polls `/status/{job_id}` and fetches `/results/{job_id}`. Jobs live in memory, belong to the user who started them, and expire after an hour.
 
-### 4. AI Assistant — DeepSeek via OpenRouter
-When a user asks a free-text question in the dashboard, `app.py` sends the question (plus relevant context from the database) to the DeepSeek model through the OpenRouter API. The model replies with business-oriented insights and suggestions. No fine-tuning is used; prompting is handled inline in `app.py`.
+**AI assistant.** `POST /api/rag/chat`:
+1. Identifies the caller from the optional Bearer token. Signed-out callers use the bundled demo dataset (`user_id = 0`).
+2. Makes sure that user's reviews are indexed (vectors are rebuilt from the database if missing, e.g. after a redeploy).
+3. Routes clearly negative or positive questions to reviews with matching sentiment.
+4. Retrieves with MMR — always filtered by `user_id` — then expands the query (multi-query) and optionally re-ranks with a cross-encoder.
+5. Asks the LLM to answer from those reviews only, in a fixed Summary / Key Themes / Notable Quotes format.
 
-### 5. Data Layer — `database.py` + SQLite
-`database.py` owns all database interactions: schema creation, inserting new feedback records, and querying historical data. SQLite is used as a zero-config embedded store, meaning no external database server is required. The `.db` file lives locally alongside the project.
+Without an LLM API key, step 5 is skipped and the most relevant reviews are returned instead.
 
 ---
 
-## Key Files
+## Key design decisions
 
-| File | What it does |
+- **Tenant isolation.** Every vector carries `user_id` metadata and every retrieval filters on it; every SQL query filters on `user_id`; clustering jobs check ownership.
+- **Database is the source of truth.** ChromaDB is a rebuildable index (`rag_api/indexing.py`, `sync_vectors.py`), so ephemeral container disks are safe for vectors.
+- **Low memory at boot.** The RAG stack (LangChain, ChromaDB, embedding models) is imported only on the first `/api/rag` request, and the LLM client only when needed, so the core API fits on 512 MB instances.
+- **Stateless auth.** JWTs (HS256) in `Authorization` headers; no cookies, so CORS never needs credentials.
+
+---
+
+## Key files
+
+| File | Purpose |
 |---|---|
-| `app.py` | Streamlit UI + orchestration logic |
-| `database.py` | SQLite schema and CRUD helpers |
-| `requirements.txt` | All Python dependencies |
-| `pdf_generator.py` | PDF report generation logic |
+| `backend/bizinsight_api/main.py` | App setup, CORS, routers, lazy RAG mount |
+| `backend/bizinsight_api/config.py` | Environment-driven settings (JWT, CORS, limits, thresholds) |
+| `backend/bizinsight_api/routes/*.py` | REST endpoints |
+| `backend/database.py` | Schema and queries for SQLite and PostgreSQL |
+| `backend/rag_api/` | Chat endpoint, chains, vector store, indexing |
+| `backend/clustering/run_clustering.py` | Topic clustering pipeline |
+| `frontend/src/lib/api-client.ts` | Typed API client used by every page |
+| `frontend/src/app/dashboard/*` | Authenticated app pages |
+| `frontend/src/components/ChatPanel.tsx` | Chat UI shared by the dashboard and public demo |
 
 ---
 
-## Data Flow in Plain English
+## Getting oriented
 
-1. A user uploads a CSV containing a `review` column.
-2. `app.py` reads each row and sends the text to VADER for sentiment scoring.
-3. Scored records are written to SQLite via `database.py`.
-4. The dashboard reads back stored records to render trend charts and surface top issues.
-5. When the user types a question into the AI assistant, the app bundles relevant context from the database into a prompt and calls the DeepSeek API, then displays the response.
-
----
-
-## Getting Oriented as a New Contributor
-
-1. **Read `app.py` top-to-bottom** — it is the backbone; everything else is called from here.
-2. **Check `database.py`** to understand the schema before touching any data logic.
-3. **Install dependencies and run locally** (`streamlit run app.py`) so you can see changes instantly.
-4. The project has no test suite yet — adding one is a great first contribution.
+1. Run the backend and open http://localhost:8001/docs to explore the API.
+2. Read `bizinsight_api/main.py`, then the route you're changing.
+3. Run `python -m pytest -q tests` in `backend/` before and after your change.

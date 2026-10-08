@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+.env
+*.db
+chroma_db/
+.cache/
+nltk_data/
+models/
+tests/
+.pytest_cache/

@@ -1,217 +1,157 @@
 import logging
-import time  
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from typing import List, Optional, Dict, Any
+import re
+import threading
+from typing import List, Optional
+
+from fastapi import Depends, FastAPI, HTTPException
+from fastapi.concurrency import run_in_threadpool
+from pydantic import BaseModel, Field
+
+from bizinsight_api.routes.auth import get_optional_user
+
 from .chains import RAGChainManager
 from .config import RAGConfig
+from .indexing import ensure_demo_indexed, ensure_user_indexed
 
 logging.basicConfig(level=RAGConfig.LOG_LEVEL)
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="BizInsight RAG API", version="1.0.0")
+app = FastAPI(title="BizInsight RAG API", version="2.0.0")
 
-import os
+_chain_manager: Optional[RAGChainManager] = None
+_chain_manager_key: Optional[str] = None
+_chain_manager_lock = threading.Lock()
 
-# CORS setup to allow Vercel and Streamlit frontends to communicate with this API
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"] if os.getenv("ALLOW_ALL_ORIGINS", "true").lower() == "true" else ["http://localhost:3000", "http://localhost:8501", os.getenv("FRONTEND_URL", "*")],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
-# Lazy singleton for chain_manager to keep startup memory low
-_chain_manager = None
+def get_chain_manager() -> RAGChainManager:
+    """Lazy singleton; rebuilt if the API key changes at runtime."""
+    global _chain_manager, _chain_manager_key
+    key = RAGConfig.get_api_key()
+    with _chain_manager_lock:
+        if _chain_manager is None or _chain_manager_key != key:
+            logger.info("Initializing RAG chain manager...")
+            _chain_manager = RAGChainManager()
+            _chain_manager_key = key
+        return _chain_manager
 
-def get_chain_manager():
-    global _chain_manager
-    current_key = RAGConfig.get_api_key()
-    if _chain_manager is None or (getattr(_chain_manager, "_cached_key", None) != current_key):
-        logger.info(f"Initializing RAGChainManager on demand (key status: {'SET' if current_key != 'NO_KEY_PROVIDED' else 'UNSET'})...")
-        _chain_manager = RAGChainManager()
-        _chain_manager._cached_key = current_key
-    return _chain_manager
 
-# Define request and response models for better type checking and documentation
 class ChatRequest(BaseModel):
-    question: str # The user's question or query
-    session_id: Optional[str] = None # An optional session ID for conversational context
-    use_memory: bool = False # Whether to use conversational memory (True for follow-up questions, False for standalone queries)
+    question: str = Field(..., min_length=1, max_length=1000)
+    session_id: Optional[str] = Field(None, max_length=100)
+    use_memory: bool = False
 
-# This response model includes the AI's answer, the sources it retrieved, and an optional session ID for tracking conversations.
+
 class ChatResponse(BaseModel):
-    answer: str # The AI-generated answer to the user's question
-    sources: List[str] # A list of source documents that the AI used to generate its answer
-    session_id: Optional[str] = None # Echo back the session ID if provided, so the frontend can maintain conversation state
+    answer: str
+    sources: List[str]
+    session_id: Optional[str] = None
+    demo: bool = False
 
-# This model is used for syncing documents to the vector store. It expects a list of documents, where each document is a dictionary containing the page content and optional metadata.
-class SyncRequest(BaseModel):
-    documents: List[Dict[str, Any]] # A list of documents to be added to the vector store, each with 'page_content' and optional 'metadata' and 'id'
 
-# This model is used for the health check endpoint, returning the status of the API and optionally the count of vectors in the store.
 class HealthResponse(BaseModel):
-    status: str # "ok" if the API is healthy, "error" if there was an issue
-    vector_count: Optional[int] = None # The number of vectors currently in the vector store, useful for monitoring and debugging
+    status: str
+    llm_configured: bool
 
-# --- API ENDPOINTS ---
-# The /health endpoint allows us to check if the API is running and can connect to the vector store. It returns "ok" and the count of vectors if successful, or "error" if there was an issue.
-@app.get("/health", response_model=HealthResponse) 
-async def health_check():
-    try:
-        cm = get_chain_manager()
-        count = cm.vector_store_manager.vectorstore._collection.count() # Access the internal collection to get the count of vectors
-        return HealthResponse(status="ok", vector_count=count) 
-    except Exception as e: 
-        logger.error(f"Health check failed: {e}") # Log the error for debugging purposes
-        return HealthResponse(status="error")
 
-# The /chat endpoint is the main entry point for the chatbot functionality. It accepts a ChatRequest, processes it through the appropriate RAG chain (with or without memory), and returns a ChatResponse containing the AI's answer and the sources it used. It also includes a retry mechanism to handle transient issues with the LLM provider, and it implements a smart metadata router to filter retrieved documents based on the sentiment of the user's question (positive or negative intent).
-@app.post("/chat", response_model=ChatResponse)
-def chat(request: ChatRequest):
-    max_retries = 4  # Number of retry attempts for LLM calls in case of failure, with exponential backoff
+NEGATIVE_WORDS = {
+    "issue", "issues", "problem", "problems", "bad", "complaint", "complaints", "wrong", "broken",
+    "negative", "worst", "terrible", "horrible", "hate", "angry", "disappointed", "frustrating",
+    "slow", "delay", "delays", "late", "bug", "bugs", "crash", "crashes", "error", "errors",
+    "fail", "failure", "refund", "damage", "damaged", "poor", "awful",
+}
+POSITIVE_WORDS = {
+    "good", "great", "best", "love", "awesome", "perfect", "positive", "happy", "excellent",
+    "amazing", "fast", "helpful", "recommend", "satisfied", "impressed", "premium",
+    "outstanding", "fantastic", "wonderful", "like", "praise",
+}
+
+
+def sentiment_filter_for(question: str) -> Optional[dict]:
+    """Route clearly negative/positive questions to reviews with matching sentiment."""
+    words = set(re.findall(r"[a-z]+", question.lower()))
+    negative, positive = bool(words & NEGATIVE_WORDS), bool(words & POSITIVE_WORDS)
+    if negative and not positive:
+        return {"sentiment": {"$lt": 0}}
+    if positive and not negative:
+        return {"sentiment": {"$gt": 0}}
+    return None
+
+
+def _dedupe(items: List[str]) -> List[str]:
+    return list(dict.fromkeys(items))
+
+
+def _retrieval_only_answer(cm: RAGChainManager, user_id: int, question: str, search_filter) -> ChatResponse:
+    """Answer without an LLM: list the most relevant reviews (used when no API key is set)."""
+    docs = cm.vector_store_manager.get_retriever(user_id, search_filter).invoke(question)
+    if not docs and search_filter:
+        docs = cm.vector_store_manager.get_retriever(user_id).invoke(question)
+    sources = _dedupe([d.page_content for d in docs])
+
+    if sources:
+        bullets = "\n".join(f"- {s}" for s in sources[:RAGConfig.TOP_K])
+        noun = "review" if len(sources) == 1 else "reviews"
+        answer = f"## Most relevant reviews\nFound {len(sources)} matching {noun}:\n\n{bullets}"
+    else:
+        answer = "No matching reviews found. Upload a CSV of customer reviews to get started."
+    answer += "\n\n> AI summaries are disabled because no LLM API key is configured on the server."
+    return ChatResponse(answer=answer, sources=sources[:RAGConfig.TOP_K])
+
+
+def _run_chain(cm: RAGChainManager, user_id: int, request: ChatRequest, search_filter):
+    if request.use_memory and request.session_id:
+        chain = cm.get_conversational_chain(user_id, request.session_id, search_filter)
+        result = chain.invoke({"question": request.question})
+        answer = result.get("answer", "")
+    else:
+        chain = cm.get_qa_chain(user_id, search_filter)
+        result = chain.invoke({"query": request.question})
+        answer = result.get("result", "")
+    sources = _dedupe([d.page_content for d in result.get("source_documents", [])])
+    return answer, sources
+
+
+def _chat(request: ChatRequest, user: Optional[dict]) -> ChatResponse:
+    is_demo = user is None
+    user_id = RAGConfig.DEMO_USER_ID if is_demo else user["id"]
+
+    if is_demo:
+        ensure_demo_indexed()
+    else:
+        ensure_user_indexed(user_id)
+
     cm = get_chain_manager()
+    search_filter = sentiment_filter_for(request.question)
 
-    active_key = RAGConfig.get_api_key()
-    key_status = "DETECTED" if active_key != "NO_KEY_PROVIDED" else "NOT_FOUND"
-    logger.info(f"Received chat request: '{request.question}'. API Key status: {key_status}")
+    if not RAGConfig.get_api_key():
+        response = _retrieval_only_answer(cm, user_id, request.question, search_filter)
+    else:
+        answer, sources = _run_chain(cm, user_id, request, search_filter)
+        if not sources and search_filter:
+            # The sentiment filter was too narrow — retry over all of this user's reviews.
+            answer, sources = _run_chain(cm, user_id, request, None)
+        response = ChatResponse(answer=answer, sources=sources[:RAGConfig.TOP_K])
 
-    # Ensure LLM has current active key
-    if hasattr(cm, "llm") and hasattr(cm.llm, "openai_api_key"):
-        cm.llm.openai_api_key = active_key
+    response.session_id = request.session_id
+    response.demo = is_demo
+    return response
 
-    # --- SMART METADATA ROUTER ---
-    question_lower = request.question.lower()
-    search_filter = None
 
-    # Expanded keyword lists for better sentiment intent detection
-    negative_words = [
-        "issue", "problem", "bad", "complaint", "wrong", "broken",
-        "negative", "worst", "terrible", "horrible", "hate", "angry",
-        "disappointed", "frustrating", "slow", "delay", "late", "bug",
-        "crash", "error", "fail", "refund", "damage", "poor", "awful"
-    ]
-    positive_words = [
-        "good", "great", "best", "love", "awesome", "perfect",
-        "positive", "happy", "excellent", "amazing", "fast",
-        "helpful", "recommend", "satisfied", "impressed", "premium",
-        "outstanding", "fantastic", "wonderful"
-    ]
+@app.get("/health", response_model=HealthResponse)
+def health_check():
+    return HealthResponse(status="ok", llm_configured=bool(RAGConfig.get_api_key()))
 
-    # If they ask about negative things, only filter for negative reviews in ChromaDB. 
-    if any(word in question_lower for word in negative_words):
-        search_filter = {"sentiment": {"$lt": 0}}
-        print("🚦 ROUTER: Negative intent detected. Filtering for sentiment < 0")
-        
-    # If they ask about positive things, only filter for positive reviews in ChromaDB.
-    elif any(word in question_lower for word in positive_words):
-        search_filter = {"sentiment": {"$gt": 0}}
-        print("🚦 ROUTER: Positive intent detected. Filtering for sentiment > 0")
-    
-    # Bypassing LLM call if API Key is not set, enabling full offline/keyless demo functionality
-    if active_key == "NO_KEY_PROVIDED":
-        # Get base retriever and retrieve related reviews directly
-        base_retriever = cm.vector_store_manager.get_retriever(search_filter=search_filter)
-        docs = base_retriever.invoke(request.question)
-        
-        # If filter yielded no results, retry without filter
-        if not docs and search_filter:
-            base_retriever = cm.vector_store_manager.get_retriever(search_filter=None)
-            docs = base_retriever.invoke(request.question)
 
-        sources = [doc.page_content for doc in docs]
-        
-        # Deduplicate sources while preserving order
-        unique_sources = list(dict.fromkeys(sources))
-        
-        # Build an honest structured response based on actual retrieved reviews
-        if not unique_sources:
-            simulated_answer = (
-                "📊 **[BizInsight — Offline Mode]**\n\n"
-                "No matching reviews found in the database. "
-                "Please upload a CSV file with customer reviews first, then sync to ChromaDB.\n\n"
-                "> 💡 *Connect an OpenRouter API key for AI-powered summaries and theme analysis.*"
-            )
-        else:
-            source_bullets = "\n".join([f"- {s}" for s in unique_sources[:5]])
-            simulated_answer = (
-                "📊 **[BizInsight — Offline Mode]**\n\n"
-                f"## Matching Reviews\n"
-                f"Found {len(unique_sources)} relevant reviews:\n\n"
-                f"{source_bullets}\n\n"
-                "> 💡 *Connect an OpenRouter API key for AI-powered summaries and theme analysis.*"
-            )
-        
-        return ChatResponse(
-            answer=simulated_answer,
-            sources=unique_sources[:RAGConfig.TOP_K],
-            session_id=request.session_id
-        )
-
-    for attempt in range(max_retries): 
-        try:
-            # Depending on whether the user wants to use memory and has provided a session ID, we either invoke a conversational chain (which maintains context across messages) or a standard QA chain (which treats each message independently). The chains will use the search_filter determined by the smart metadata router to fetch relevant documents from the vector store.
-            if request.use_memory and request.session_id: 
-                chain = cm.get_conversational_chain(request.session_id, search_filter=search_filter)
-                result = chain.invoke({"question": request.question})
-                answer = result.get("answer", "")
-                sources = [doc.page_content for doc in result.get("source_documents", [])]
-
-                # Fallback if sentiment filter yielded no documents
-                if not sources and search_filter:
-                    chain_fallback = cm.get_conversational_chain(request.session_id, search_filter=None)
-                    result = chain_fallback.invoke({"question": request.question})
-                    answer = result.get("answer", "")
-                    sources = [doc.page_content for doc in result.get("source_documents", [])]
-            else:
-                chain = cm.get_qa_chain(search_filter=search_filter)
-                result = chain.invoke({"query": request.question})
-                answer = result.get("result", result.get("answer", ""))
-                sources = [doc.page_content for doc in result.get("source_documents", [])]
-
-                # Fallback if sentiment filter yielded no documents
-                if not sources and search_filter:
-                    chain_fallback = cm.get_qa_chain(search_filter=None)
-                    result = chain_fallback.invoke({"query": request.question})
-                    answer = result.get("result", result.get("answer", ""))
-                    sources = [doc.page_content for doc in result.get("source_documents", [])]
-
-            # Debug logs to inspect the raw AI result and the retrieved sources, which can help in understanding how the smart metadata router is influencing the results.
-            if request.use_memory and request.session_id:
-                print("🤖 RAW AI RESULT:", result)  
-                print("🔍 Retrieved sources:", sources) 
-
-            # Return the AI's answer along with the sources it used. The frontend can use this information to display the answer and optionally show the sources to the user for transparency.
-            return ChatResponse(
-                answer=answer,
-                sources=sources[:RAGConfig.TOP_K],
-                session_id=request.session_id
-            )
-            
-        except Exception as e:
-            logger.exception(f"LLM Call failed on attempt {attempt + 1}: {str(e)}")
-            
-            if attempt == max_retries - 1:
-                logger.error(f"All retry attempts exhausted: {str(e)}")
-                raise HTTPException(
-                    status_code=502, 
-                    detail=f"AI Provider Error: {str(e)}"
-                )
-            
-            # Wait before retrying (exponential backoff)
-            time.sleep(2 ** attempt)
-
-# The /sync endpoint allows us to upload new documents to the vector store. It accepts a SyncRequest containing a list of documents, which are then added to the ChromaDB vector store. This endpoint is typically used after uploading new reviews from a CSV file, and it ensures that the vector store is updated with the latest data for accurate retrieval during chat interactions. The endpoint also includes error handling to catch any issues during the syncing process and returns an appropriate HTTP response in case of failure.
-@app.post("/sync")
-async def sync_documents(request: SyncRequest):
+@app.post("/chat", response_model=ChatResponse)
+async def chat(request: ChatRequest, user: Optional[dict] = Depends(get_optional_user)):
+    """Answer a question grounded in the caller's reviews (or the demo dataset when signed out)."""
     try:
-        cm = get_chain_manager()
-        # We call the add_documents method of the VectorStoreManager to add the new documents to ChromaDB. This method also handles clearing old documents to prevent duplicates. If the syncing process is successful, we return a success message along with the count of added documents. 
-        cm.vector_store_manager.add_documents(request.documents)
-        return {"status": "success", "added_count": len(request.documents)}
-    except Exception as e:
-        # If there is an error during syncing (e.g., issues with ChromaDB, invalid document format), we log the exception and return a 500 Internal Server Error response with the error details.
-        logger.exception("Sync failed")
-        raise HTTPException(status_code=500, detail=str(e))
+        return await run_in_threadpool(_chat, request, user)
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("Chat request failed")
+        raise HTTPException(
+            status_code=502,
+            detail="The AI assistant is temporarily unavailable. Please try again in a moment.",
+        )
