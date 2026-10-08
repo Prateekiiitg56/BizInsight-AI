@@ -72,6 +72,15 @@ class VectorStoreManager:
         result = self.vectorstore.get(where={"user_id": user_id}, include=[])
         return len(result.get("ids", [])) if result else 0
 
+    def document_ids(self, user_id: int) -> set:
+        result = self.vectorstore.get(where={"user_id": user_id}, include=[])
+        return set(result.get("ids", [])) if result else set()
+
+    def delete_ids(self, ids) -> None:
+        ids = list(ids)
+        for start in range(0, len(ids), 1000):
+            self.vectorstore.delete(ids=ids[start:start + 1000])
+
     def delete_user_documents(self, user_id: int) -> None:
         self.vectorstore._collection.delete(where={"user_id": user_id})
 

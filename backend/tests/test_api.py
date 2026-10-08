@@ -156,3 +156,27 @@ def test_admin_routes(client, make_user):
     assert any(u["username"] == target["username"] for u in users)
     assert client.delete(f"/api/admin/users/{admin['id']}", headers=headers).status_code == 400
     assert client.delete(f"/api/admin/users/{target['id']}", headers=headers).status_code == 200
+
+
+def test_vector_sync_is_incremental_and_scoped(client, make_user):
+    from rag_api.indexing import sync_user_reviews
+    from rag_api.vector_store import get_vector_store_manager
+
+    alice, bob = make_user(), make_user()
+    upload(client, alice, CSV)
+    upload(client, bob, CSV)
+    vsm = get_vector_store_manager()
+
+    sync_user_reviews(alice["id"])
+    assert sync_user_reviews(alice["id"]) == 0  # nothing new → nothing re-embedded
+    assert vsm.count_documents(alice["id"]) == 4
+
+    upload(client, alice, "review\nBrand new review text\n")
+    sync_user_reviews(alice["id"])  # the upload's background sync may already have added it
+    assert vsm.count_documents(alice["id"]) == 5
+    assert sync_user_reviews(alice["id"]) == 0
+
+    client.delete("/api/admin/reviews", headers=alice["headers"])
+    assert vsm.count_documents(alice["id"]) == 0
+    sync_user_reviews(bob["id"])
+    assert vsm.count_documents(bob["id"]) == 4

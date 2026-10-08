@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { LoadingState } from "@/components/ui";
+import { ErrorBanner, LoadingState } from "@/components/ui";
 import { UserContext } from "@/components/UserContext";
 import { api } from "@/lib/api-client";
 import { clearSession, getStoredUser, getToken, saveUser, UNAUTHORIZED_EVENT } from "@/lib/session";
@@ -25,6 +25,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const router = useRouter();
   const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
+  const [loadError, setLoadError] = useState("");
   const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
@@ -32,13 +33,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       router.replace("/login");
       return;
     }
-    setUser(getStoredUser());
+    const stored = getStoredUser();
+    setUser(stored);
 
     // Re-validate the session in the background; a 401 fires UNAUTHORIZED_EVENT below.
-    api.me().then((u) => {
-      setUser(u);
-      saveUser(u);
-    }).catch(() => {});
+    api
+      .me()
+      .then((u) => {
+        setUser(u);
+        saveUser(u);
+      })
+      .catch((err: Error) => {
+        // Without a cached profile there is nothing to render, so surface the error.
+        if (!stored) setLoadError(err.message);
+      });
 
     const onUnauthorized = () => router.replace("/login");
     window.addEventListener(UNAUTHORIZED_EVENT, onUnauthorized);
@@ -52,7 +60,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     router.replace("/");
   };
 
-  if (!user) return <LoadingState label="Loading your workspace…" />;
+  if (!user) {
+    if (loadError) {
+      return (
+        <div className="mx-auto max-w-md px-4 pt-24">
+          <ErrorBanner
+            message={loadError}
+            action={
+              <button type="button" onClick={() => window.location.reload()} className="font-medium underline underline-offset-2">
+                Retry
+              </button>
+            }
+          />
+        </div>
+      );
+    }
+    return <LoadingState label="Loading your workspace…" />;
+  }
 
   const links = user.role === "admin" ? [...NAV, { href: "/dashboard/admin", icon: Users, label: "Users" }] : NAV;
 

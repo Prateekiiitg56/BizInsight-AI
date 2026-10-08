@@ -39,12 +39,22 @@ def _rows_to_docs(rows):
 
 
 def sync_user_reviews(user_id: int) -> int:
-    """Rebuild a user's vectors from the database. Returns the number indexed."""
+    """Bring a user's vectors in line with the database.
+
+    Only reviews not yet indexed are embedded, and vectors whose rows no longer
+    exist (or that came from older, non-deterministic ids) are removed, so an
+    upload never re-embeds the user's whole history. Returns the number added.
+    """
     with _lock_for(user_id):
         vsm = get_vector_store_manager()
-        vsm.delete_user_documents(user_id)
-        rows = fetch_feedback_for_indexing(user_id)
-        return vsm.upsert_reviews(_rows_to_docs(rows)) if rows else 0
+        docs = {d["id"]: d for d in _rows_to_docs(fetch_feedback_for_indexing(user_id))}
+        existing = vsm.document_ids(user_id)
+
+        stale = existing - docs.keys()
+        if stale:
+            vsm.delete_ids(stale)
+        missing = [d for doc_id, d in docs.items() if doc_id not in existing]
+        return vsm.upsert_reviews(missing) if missing else 0
 
 
 def ensure_user_indexed(user_id: int) -> None:

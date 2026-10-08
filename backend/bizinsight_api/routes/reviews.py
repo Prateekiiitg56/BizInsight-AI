@@ -75,7 +75,7 @@ async def upload_reviews(
         raise HTTPException(status_code=400, detail="No reviews found in the 'review' column.")
 
     scores = reviews.apply(get_sentiment)
-    insert_feedback_bulk(list(zip(reviews, scores)), user_id=current_user["id"])
+    insert_feedback_bulk([(r, float(s)) for r, s in zip(reviews, scores)], user_id=current_user["id"])
     _sync_vectors_in_background(current_user["id"])
 
     total = len(scores)
