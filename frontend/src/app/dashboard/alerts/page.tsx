@@ -1,85 +1,196 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { AlertTriangle, CheckCircle2, RefreshCw, ShieldAlert, Upload } from "lucide-react";
+import Link from "next/link";
+import { useCallback, useEffect, useState } from "react";
+import { EmptyState, ErrorBanner, LoadingState, PageHeader, RISK_STYLES, Spinner } from "@/components/ui";
 import { api } from "@/lib/api-client";
-import { ShieldAlert, Mail, Bell, CheckCircle, RefreshCw, AlertTriangle } from "lucide-react";
+import type { AlertStatus } from "@/lib/types";
+import { cn } from "@/lib/utils";
+
+const MEDIUM_THRESHOLD = 25;
+
+const GUIDANCE: Record<string, string> = {
+  low: "Customer sentiment is healthy. Keep monitoring as new reviews arrive.",
+  medium: "Negative feedback is building. Review the top issues below before they escalate.",
+  high: "Negative reviews have crossed the alert threshold. Prioritize the top issues and run complaint clustering to find root causes.",
+};
 
 export default function AlertsPage() {
-  const [alerts, setAlerts] = useState<any>(null);
+  const [alerts, setAlerts] = useState<AlertStatus | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
 
-  const fetchAlerts = async () => {
-    const token = localStorage.getItem("bizinsight_token");
-    if (!token) return;
-    setLoading(true);
-    try { setAlerts(await api.getAlerts(token)); } catch (err: any) { setError(err.message || "Failed."); } finally { setLoading(false); }
-  };
+  const load = useCallback(async (initial = false) => {
+    if (initial) setLoading(true);
+    else setRefreshing(true);
+    setError("");
+    try {
+      setAlerts(await api.getAlerts());
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not load alerts.");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
 
-  useEffect(() => { fetchAlerts(); }, []);
+  useEffect(() => {
+    load(true);
+  }, [load]);
 
-  if (loading) return <div className="min-h-[60vh] flex flex-col items-center justify-center gap-3"><RefreshCw className="animate-spin text-zinc-400" size={24} /><p className="text-sm text-zinc-500">Loading alerts...</p></div>;
+  if (loading) return <LoadingState label="Loading alerts…" />;
 
-  const isHigh = alerts?.risk_level === "high";
+  const header = (
+    <PageHeader
+      title="Risk alerts"
+      description="Risk is based on the share of negative reviews in your data."
+      actions={
+        <button type="button" onClick={() => load()} disabled={refreshing} className="btn-secondary">
+          {refreshing ? <Spinner size={14} /> : <RefreshCw size={14} />} Re-scan
+        </button>
+      }
+    />
+  );
+
+  if (error || !alerts) {
+    return (
+      <div>
+        {header}
+        <ErrorBanner message={error || "Could not load alerts."} />
+      </div>
+    );
+  }
+
+  if (alerts.total_reviews === 0) {
+    return (
+      <div>
+        {header}
+        <EmptyState
+          icon={<ShieldAlert size={26} />}
+          title="Nothing to monitor yet"
+          description="Upload reviews to calculate your risk level."
+          action={
+            <Link href="/dashboard/upload" className="btn-primary">
+              <Upload size={16} /> Upload reviews
+            </Link>
+          }
+        />
+      </div>
+    );
+  }
+
+  const style = RISK_STYLES[alerts.risk_level] ?? RISK_STYLES.low;
+  const RiskIcon = alerts.risk_level === "low" ? CheckCircle2 : AlertTriangle;
+  const gaugePct = Math.min(100, alerts.negative_percent);
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <div><h2 className="text-2xl font-semibold tracking-tight">Trend Alerts</h2><p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">Real-time threshold monitoring.</p></div>
-        <button onClick={fetchAlerts} className="text-sm font-medium px-4 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors flex items-center gap-1.5"><RefreshCw size={14} /> Re-scan</button>
-      </div>
+      {header}
 
-      {error ? <div className="border border-red-200 dark:border-red-500/20 rounded-xl p-5 text-sm text-red-500">{error}</div> : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-4">
-            <div className={`border rounded-xl p-6 ${isHigh ? "border-red-200 dark:border-red-500/20 bg-red-50/50 dark:bg-red-500/5" : "border-emerald-200 dark:border-emerald-500/20 bg-emerald-50/50 dark:bg-emerald-500/5"}`}>
-              <div className="flex items-start justify-between mb-6">
-                <div><div className="text-xs text-zinc-500 mb-1">Risk Assessment</div><h3 className={`text-2xl font-semibold uppercase ${isHigh ? "text-red-500" : "text-emerald-600 dark:text-emerald-400"}`}>{alerts?.risk_level}</h3></div>
-                <ShieldAlert size={28} className={isHigh ? "text-red-500" : "text-emerald-600 dark:text-emerald-400"} />
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="space-y-4 lg:col-span-2">
+          <section className="card p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <div className="muted text-xs font-medium">Current risk level</div>
+                <div className={cn("mt-1 flex items-center gap-2 text-3xl font-semibold", style.text)}>
+                  <RiskIcon size={26} /> {style.label}
+                </div>
+                <p className="muted mt-2 max-w-md text-sm">{GUIDANCE[alerts.risk_level]}</p>
               </div>
-              <div className="grid grid-cols-3 gap-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-4 rounded-xl">
-                <div><div className="text-xs text-zinc-500">Negative %</div><div className={`text-xl font-semibold mt-0.5 ${isHigh ? "text-red-500" : ""}`}>{alerts?.negative_percent}%</div></div>
-                <div><div className="text-xs text-zinc-500">Threshold</div><div className="text-xl font-semibold mt-0.5">{alerts?.threshold}%</div></div>
-                <div><div className="text-xs text-zinc-500">Total</div><div className="text-xl font-semibold mt-0.5">{alerts?.total_reviews}</div></div>
-              </div>
-              <div className="mt-4 space-y-2 pt-4 border-t border-zinc-200 dark:border-zinc-800">
-                {["SQLite health: Active", "SMTP outgoing: Connected", `Dispatcher: ${isHigh ? "Dispatched" : "Monitoring"}`].map((s, i) => (
-                  <div key={i} className="flex items-center gap-2 text-xs"><CheckCircle className="text-emerald-500" size={14} /><span className="text-zinc-500">{s}</span></div>
+              <span className={cn("rounded-full px-3 py-1 text-xs font-medium", style.badge)}>
+                {alerts.negative_percent.toFixed(1)}% negative
+              </span>
+            </div>
+
+            {/* Gauge: 0–100% negative, with medium & high thresholds marked */}
+            <div className="mt-8">
+              <div className="relative h-2.5 rounded-full bg-zinc-100 dark:bg-zinc-800">
+                <div
+                  className={cn(
+                    "h-full rounded-full",
+                    alerts.risk_level === "high" ? "bg-red-500" : alerts.risk_level === "medium" ? "bg-amber-500" : "bg-emerald-500"
+                  )}
+                  style={{ width: `${gaugePct}%` }}
+                />
+                {[MEDIUM_THRESHOLD, alerts.threshold].map((t) => (
+                  <div key={t} className="absolute -top-1 w-px bg-zinc-400" style={{ left: `${t}%`, height: 18 }} />
                 ))}
               </div>
-            </div>
-            <div className="border border-zinc-200 dark:border-zinc-800 rounded-xl p-5">
-              <h3 className="text-sm font-medium mb-3 flex items-center gap-2"><AlertTriangle size={14} className="text-amber-500" /> Top Issue Keywords</h3>
-              <div className="flex flex-wrap gap-2">
-                {alerts?.top_issues?.map((w: string, i: number) => (<span key={i} className="px-3 py-1.5 rounded-full bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-xs text-red-600 dark:text-red-400 capitalize">{w}</span>))}
-                {!alerts?.top_issues?.length && <span className="text-xs text-zinc-400 italic">No issues flagged.</span>}
+              <div className="muted relative mt-2 h-4 text-[11px]">
+                <span className="absolute left-0">0%</span>
+                <span className="absolute -translate-x-1/2" style={{ left: `${MEDIUM_THRESHOLD}%` }}>
+                  {MEDIUM_THRESHOLD}%
+                </span>
+                <span className="absolute -translate-x-1/2" style={{ left: `${alerts.threshold}%` }}>
+                  {alerts.threshold}%
+                </span>
+                <span className="absolute right-0">100%</span>
               </div>
             </div>
-          </div>
 
-          <div className="space-y-4">
-            <div className="border border-zinc-200 dark:border-zinc-800 rounded-xl p-5">
-              <Mail size={18} className="text-zinc-400 mb-3" />
-              <h4 className="font-semibold text-sm mb-2">SMTP Config</h4>
-              <p className="text-xs text-zinc-500 leading-relaxed mb-3">Automated alerts dispatch when risk exceeds threshold.</p>
-              <div className="space-y-1.5 text-[10px] text-zinc-500 border-t border-zinc-200 dark:border-zinc-800 pt-3">
-                <div>Sender: <span className="text-zinc-900 dark:text-white">alerts@bizinsight.ai</span></div>
-                <div>Recipient: <span className="text-zinc-900 dark:text-white">{(() => { try { const u = JSON.parse(localStorage.getItem("bizinsight_user") || "{}"); return u.email || "Not configured"; } catch { return "Not configured"; } })()}</span></div>
-                <div>Trigger: <span className="text-zinc-900 dark:text-white">Negative &gt; 40%</span></div>
+            <dl className="mt-6 grid grid-cols-3 gap-4 border-t border-zinc-200 pt-5 dark:border-zinc-800">
+              <div>
+                <dt className="muted text-xs">Negative share</dt>
+                <dd className="mt-0.5 text-xl font-semibold tabular-nums">{alerts.negative_percent.toFixed(1)}%</dd>
               </div>
-            </div>
-            <div className="border border-zinc-200 dark:border-zinc-800 rounded-xl p-5">
-              <Bell size={18} className="text-zinc-400 mb-3" />
-              <h4 className="font-semibold text-sm mb-2">Risk Scoring</h4>
-              <div className="space-y-2 text-xs border-t border-zinc-200 dark:border-zinc-800 pt-3 mt-3">
-                <div className="flex justify-between"><span className="text-emerald-600">Low</span><span className="text-zinc-500">&lt; 25%</span></div>
-                <div className="flex justify-between"><span className="text-amber-500">Medium</span><span className="text-zinc-500">25–40%</span></div>
-                <div className="flex justify-between"><span className="text-red-500 font-semibold">High</span><span className="text-zinc-500">&gt; 40%</span></div>
+              <div>
+                <dt className="muted text-xs">Alert threshold</dt>
+                <dd className="mt-0.5 text-xl font-semibold tabular-nums">{alerts.threshold}%</dd>
               </div>
-            </div>
-          </div>
+              <div>
+                <dt className="muted text-xs">Reviews scanned</dt>
+                <dd className="mt-0.5 text-xl font-semibold tabular-nums">{alerts.total_reviews.toLocaleString()}</dd>
+              </div>
+            </dl>
+          </section>
+
+          <section className="card p-5">
+            <h2 className="text-sm font-semibold">Top issue keywords</h2>
+            <p className="muted mb-4 text-xs">Most frequent terms in negative reviews</p>
+            {alerts.top_issues.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {alerts.top_issues.map((w) => (
+                  <span
+                    key={w}
+                    className="rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs capitalize text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300"
+                  >
+                    {w}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p className="muted text-sm">No negative issues found.</p>
+            )}
+            <Link href="/dashboard/clusters" className="btn-secondary mt-5">
+              Find root causes with clustering
+            </Link>
+          </section>
         </div>
-      )}
+
+        <section className="card h-fit p-5">
+          <h2 className="text-sm font-semibold">How risk is scored</h2>
+          <dl className="mt-4 space-y-3 text-sm">
+            {[
+              ["low", `Below ${MEDIUM_THRESHOLD}%`],
+              ["medium", `${MEDIUM_THRESHOLD}% – ${alerts.threshold}%`],
+              ["high", `${alerts.threshold}% or more`],
+            ].map(([level, range]) => (
+              <div key={level} className="flex items-center justify-between">
+                <dt className={cn("rounded-full px-2.5 py-0.5 text-xs font-medium", RISK_STYLES[level].badge)}>
+                  {RISK_STYLES[level].label}
+                </dt>
+                <dd className="muted tabular-nums">{range} negative</dd>
+              </div>
+            ))}
+          </dl>
+          <p className="muted mt-5 border-t border-zinc-200 pt-4 text-xs leading-relaxed dark:border-zinc-800">
+            A review counts as negative when its VADER sentiment score is below zero.
+          </p>
+        </section>
+      </div>
     </div>
   );
 }

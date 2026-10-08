@@ -1,107 +1,211 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { ChevronDown, Layers } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ErrorBanner, PageHeader, Spinner } from "@/components/ui";
 import { api } from "@/lib/api-client";
-import { Layers, RefreshCw, ChevronDown, ChevronUp, AlertCircle, MessageSquare } from "lucide-react";
+import type { ClusterItem, ClusteringJobStatus, ClusteringMode, ClusteringResult } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
-const ClusterRow = ({ cluster }: { cluster: any }) => {
-  const [expanded, setExpanded] = useState(false);
-  return (
-    <div className="border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 hover:shadow-lg transition-shadow">
-      <div onClick={() => setExpanded(!expanded)} className="flex items-center justify-between cursor-pointer">
-        <div><h4 className="font-medium text-sm capitalize">{cluster.name.replace(/^\d+_\s*/, "")}</h4><span className="text-[10px] text-zinc-500">ID: {cluster.id} · {cluster.count} comments</span></div>
-        <div className="flex items-center gap-3">
-          <div className="text-right"><span className="text-xs font-semibold">{cluster.percentage}%</span><div className="w-20 bg-zinc-100 dark:bg-zinc-800 h-1.5 rounded-full mt-1 overflow-hidden"><div className="bg-zinc-900 dark:bg-white h-full rounded-full" style={{ width: `${cluster.percentage}%` }} /></div></div>
-          {expanded ? <ChevronUp size={14} className="text-zinc-400" /> : <ChevronDown size={14} className="text-zinc-400" />}
-        </div>
-      </div>
-      {expanded && (
-        <div className="border-t border-zinc-100 dark:border-zinc-800 pt-3 mt-3 space-y-2">
-          <span className="text-[10px] text-zinc-500 uppercase flex items-center gap-1"><MessageSquare size={10} /> Sample reviews:</span>
-          {cluster.example_reviews?.map((q: string, i: number) => (<div key={i} className="p-3 rounded-lg bg-zinc-50 dark:bg-zinc-800 text-xs italic leading-relaxed">&ldquo;{q}&rdquo;</div>))}
-        </div>
-      )}
-    </div>
-  );
-};
+const POLL_MS = 2000;
 
 export default function ClustersPage() {
-  const [mode, setMode] = useState<"negative" | "positive">("negative");
-  const [job, setJob] = useState<any>(null);
-  const [result, setResult] = useState<any>(null);
+  const [mode, setMode] = useState<ClusteringMode>("negative");
+  const [job, setJob] = useState<ClusteringJobStatus | null>(null);
+  const [result, setResult] = useState<ClusteringResult | null>(null);
+  const [resultMode, setResultMode] = useState<ClusteringMode>("negative");
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+
+  const running = job?.status === "pending" || job?.status === "running";
 
   useEffect(() => {
-    if (!job || job.status === "completed" || job.status === "failed") return;
-    const id = setInterval(async () => {
-      const token = localStorage.getItem("bizinsight_token");
-      if (!token) return;
+    if (!job || !running) return;
+    let cancelled = false;
+    const timer = setTimeout(async () => {
       try {
-        const s = await api.getClusteringStatus(token, job.job_id);
-        setJob(s);
-        if (s.status === "completed") { setResult(await api.getClusteringResults(token, job.job_id)); setLoading(false); clearInterval(id); }
-        else if (s.status === "failed") { setError(s.message || "Failed."); setLoading(false); clearInterval(id); }
-      } catch (e: any) { setError(e.message); setLoading(false); clearInterval(id); }
-    }, 2000);
-    return () => clearInterval(id);
-  }, [job]);
+        const status = await api.getClusteringStatus(job.job_id);
+        if (cancelled) return;
+        if (status.status === "completed") {
+          const res = await api.getClusteringResults(job.job_id);
+          if (cancelled) return;
+          setResult(res);
+        } else if (status.status === "failed") {
+          setError(status.message || "Clustering failed.");
+        }
+        setJob(status);
+      } catch (err) {
+        if (cancelled) return;
+        setError(err instanceof Error ? err.message : "Lost track of the clustering job.");
+        setJob(null);
+      }
+    }, POLL_MS);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [job, running]);
 
   const start = async () => {
-    const token = localStorage.getItem("bizinsight_token");
-    if (!token) return;
-    setLoading(true); setError(""); setResult(null); setJob(null);
-    try { setJob(await api.startClustering(token, mode)); } catch (e: any) { setError(e.message || "Failed."); setLoading(false); }
+    setError("");
+    setResult(null);
+    setResultMode(mode);
+    try {
+      setJob(await api.startClustering(mode));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not start clustering.");
+    }
   };
+
+  const maxCount = Math.max(1, ...(result?.clusters.map((c) => c.count) ?? []));
 
   return (
     <div>
-      <div className="mb-6"><h2 className="text-2xl font-semibold tracking-tight">Smart Clustering</h2><p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">Auto-group feedback using HDBSCAN + BERTopic.</p></div>
+      <PageHeader
+        title="Topic clustering"
+        description="Group reviews into themes with BERTopic (sentence embeddings → UMAP → HDBSCAN)."
+      />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-4">
-          <div className="border border-zinc-200 dark:border-zinc-800 rounded-xl p-5 space-y-4">
-            <div><h3 className="font-semibold text-sm">Run Topic Modeling</h3><p className="text-xs text-zinc-500 mt-1 leading-relaxed">Vectorize feedback, reduce with UMAP, group with HDBSCAN.</p></div>
+          <section className="card space-y-4 p-5">
             <div>
-              <label className="block text-xs font-medium text-zinc-500 mb-2">Sentiment subset</label>
-              <div className="grid grid-cols-2 gap-1 p-1 rounded-lg bg-zinc-100 dark:bg-zinc-800">
-                <button onClick={() => setMode("negative")} disabled={loading} className={`py-2 text-xs font-medium rounded-md transition ${mode === "negative" ? "bg-white dark:bg-zinc-700 shadow text-red-500" : "text-zinc-500"}`}>Negative</button>
-                <button onClick={() => setMode("positive")} disabled={loading} className={`py-2 text-xs font-medium rounded-md transition ${mode === "positive" ? "bg-white dark:bg-zinc-700 shadow text-emerald-600" : "text-zinc-500"}`}>Positive</button>
+              <h2 className="text-sm font-semibold">Run clustering</h2>
+              <p className="muted mt-1 text-xs leading-relaxed">
+                Needs at least 10 reviews of the chosen sentiment. Large datasets can take a minute or two.
+              </p>
+            </div>
+            <fieldset>
+              <legend className="label">Reviews to cluster</legend>
+              <div className="grid grid-cols-2 gap-1 rounded-lg bg-zinc-100 p-1 dark:bg-zinc-800">
+                {(["negative", "positive"] as const).map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => setMode(m)}
+                    disabled={running}
+                    aria-pressed={mode === m}
+                    className={cn(
+                      "rounded-md py-1.5 text-xs font-medium capitalize transition",
+                      mode === m ? "bg-white shadow-sm dark:bg-zinc-700" : "muted"
+                    )}
+                  >
+                    {m === "negative" ? "Complaints" : "Praise"}
+                  </button>
+                ))}
               </div>
-            </div>
-            <button onClick={start} disabled={loading} className="w-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-lg py-2.5 text-sm font-medium hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2">
-              {loading ? <><RefreshCw className="animate-spin" size={14} /> Running...</> : <><Layers size={14} /> Map Complaints</>}
+            </fieldset>
+            <button type="button" onClick={start} disabled={running} className="btn-primary w-full py-2.5">
+              {running ? <Spinner /> : <Layers size={15} />}
+              {running ? "Clustering…" : mode === "negative" ? "Find complaint themes" : "Find praise themes"}
             </button>
-          </div>
+          </section>
+
           {job && (
-            <div className="border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 space-y-2 text-xs">
-              <div className="flex justify-between"><span className="text-zinc-500">Job ID</span><span className="font-mono">{job.job_id?.slice(0, 8)}...</span></div>
-              <div className="flex justify-between"><span className="text-zinc-500">Status</span><span className={`px-2 py-0.5 rounded uppercase text-[10px] font-medium ${job.status === "completed" ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400" : job.status === "failed" ? "bg-red-50 text-red-500" : "bg-amber-50 text-amber-500 animate-pulse"}`}>{job.status}</span></div>
-              <div className="p-2 bg-zinc-50 dark:bg-zinc-800 rounded-lg text-center text-zinc-500">{job.message}</div>
-            </div>
+            <section className="card space-y-2 p-4 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="muted">Status</span>
+                <span
+                  className={cn(
+                    "rounded-full px-2 py-0.5 font-medium capitalize",
+                    job.status === "completed"
+                      ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400"
+                      : job.status === "failed"
+                        ? "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400"
+                        : "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400"
+                  )}
+                >
+                  {job.status}
+                </span>
+              </div>
+              {job.message && <p className="muted">{job.message}</p>}
+            </section>
           )}
-          {error && <div className="p-3 rounded-lg bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-xs text-red-500 flex items-start gap-2"><AlertCircle size={14} className="mt-0.5 shrink-0" />{error}</div>}
+
+          {error && <ErrorBanner message={error} />}
         </div>
 
-        <div className="lg:col-span-2 space-y-4">
-          {loading ? (
-            <div className="min-h-[300px] flex flex-col items-center justify-center gap-3"><RefreshCw className="animate-spin text-zinc-400" size={28} /><div className="text-center"><h4 className="font-medium text-sm">Running ML Pipeline</h4><p className="text-xs text-zinc-500 mt-1">This may take up to a minute...</p></div></div>
-          ) : result ? (
-            <div className="space-y-4">
-              <div className="border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 flex items-center justify-between">
-                <div><div className="text-xs text-zinc-500">Results</div><h3 className="font-semibold">{result.n_clusters} clusters found</h3></div>
-                <div className="text-right"><div className="text-xs text-zinc-500">Noise</div><div className="text-lg font-semibold text-amber-500">{result.noise_percentage}%</div></div>
+        <div className="lg:col-span-2">
+          {running ? (
+            <div className="card flex min-h-[320px] flex-col items-center justify-center gap-3 p-8 text-center">
+              <Spinner size={26} className="text-zinc-400" />
+              <div>
+                <h3 className="text-sm font-medium">Running the clustering pipeline</h3>
+                <p className="muted mt-1 text-xs">The first run also downloads the embedding model.</p>
               </div>
-              {result.clusters?.map((c: any) => <ClusterRow key={c.id} cluster={c} />)}
-              {!result.clusters?.length && <div className="py-12 text-center text-zinc-400">No clusters detected.</div>}
+            </div>
+          ) : result ? (
+            <div className="space-y-3">
+              <section className="card grid grid-cols-3 gap-4 p-5">
+                <div>
+                  <div className="muted text-xs">Themes found</div>
+                  <div className="text-xl font-semibold tabular-nums">{result.n_clusters}</div>
+                </div>
+                <div>
+                  <div className="muted text-xs">Reviews clustered</div>
+                  <div className="text-xl font-semibold tabular-nums">{result.total_reviews.toLocaleString()}</div>
+                </div>
+                <div>
+                  <div className="muted text-xs" title="Reviews that didn't fit any theme">Unclustered</div>
+                  <div className="text-xl font-semibold tabular-nums">{result.noise_percentage}%</div>
+                </div>
+              </section>
+              {result.clusters.length > 0 ? (
+                result.clusters.map((c) => (
+                  <ClusterRow key={c.id} cluster={c} maxCount={maxCount} positive={resultMode === "positive"} />
+                ))
+              ) : (
+                <div className="card muted p-10 text-center text-sm">
+                  No distinct themes found. Try again with more reviews.
+                </div>
+              )}
             </div>
           ) : (
-            <div className="min-h-[300px] border-2 border-dashed border-zinc-200 dark:border-zinc-700 rounded-xl flex flex-col items-center justify-center text-center text-zinc-400 gap-2 p-8">
-              <Layers size={28} /><h4 className="text-sm font-medium text-zinc-900 dark:text-white">No Active Session</h4><p className="text-xs max-w-xs">Run the clustering engine to identify topic groups.</p>
+            <div className="flex min-h-[320px] flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-zinc-200 p-8 text-center dark:border-zinc-800">
+              <Layers size={26} className="text-zinc-400" />
+              <h3 className="text-sm font-medium">No results yet</h3>
+              <p className="muted max-w-xs text-xs">Run clustering to see the main themes in your reviews.</p>
             </div>
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+function ClusterRow({ cluster, maxCount, positive }: { cluster: ClusterItem; maxCount: number; positive: boolean }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="card">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        aria-expanded={open}
+        className="flex w-full items-center gap-4 p-4 text-left"
+      >
+        <div className="min-w-0 flex-1">
+          <h3 className="truncate text-sm font-medium">{cluster.name}</h3>
+          <div className="mt-2 h-1.5 rounded-full bg-zinc-100 dark:bg-zinc-800">
+            <div
+              className={cn("h-full rounded-full", positive ? "bg-emerald-500" : "bg-red-500")}
+              style={{ width: `${(cluster.count / maxCount) * 100}%` }}
+            />
+          </div>
+        </div>
+        <div className="shrink-0 text-right">
+          <div className="text-sm font-semibold tabular-nums">{cluster.percentage}%</div>
+          <div className="muted text-xs tabular-nums">{cluster.count.toLocaleString()} reviews</div>
+        </div>
+        <ChevronDown size={16} className={cn("shrink-0 text-zinc-400 transition", open && "rotate-180")} />
+      </button>
+      {open && cluster.example_reviews.length > 0 && (
+        <ul className="space-y-2 border-t border-zinc-100 p-4 dark:border-zinc-800">
+          {cluster.example_reviews.map((q, i) => (
+            <li key={i} className="rounded-lg bg-zinc-50 px-3 py-2 text-xs italic leading-relaxed dark:bg-zinc-800/60">
+              &ldquo;{q}&rdquo;
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

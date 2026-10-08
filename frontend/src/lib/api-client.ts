@@ -1,167 +1,141 @@
-const rawBaseUrl = process.env.NEXT_PUBLIC_API_URL || "https://bizinsight-backend.onrender.com";
-const API_BASE_URL = rawBaseUrl.replace(/\/+$/, "");
+import { clearSession, getToken, UNAUTHORIZED_EVENT } from "./session";
+import type {
+  AdminUser,
+  AlertStatus,
+  AuthResponse,
+  ChatRequest,
+  ChatResponse,
+  ClusteringJobStatus,
+  ClusteringMode,
+  ClusteringResult,
+  DashboardSummary,
+  ReviewsResponse,
+  UploadSummary,
+  User,
+} from "./types";
 
-interface FetchOptions extends RequestInit {
-  token?: string | null;
+export const API_BASE_URL = (
+  process.env.NEXT_PUBLIC_API_URL || "https://bizinsight-backend.onrender.com"
+).replace(/\/+$/, "");
+
+export class ApiError extends Error {
+  constructor(message: string, public status: number) {
+    super(message);
+    this.name = "ApiError";
+  }
 }
 
-async function request<T>(path: string, options: FetchOptions = {}): Promise<T> {
-  const { token, headers: customHeaders, ...restOptions } = options;
-  const url = `${API_BASE_URL}${path}`;
+const NETWORK_ERROR =
+  "Can't reach the BizInsight server. If it was idle it may be starting up — please try again in a few seconds.";
 
-  const headers = new Headers(customHeaders);
-  if (token) {
-    headers.set("Authorization", `Bearer ${token}`);
-  }
-  if (!(options.body instanceof FormData) && !headers.has("Content-Type")) {
+function errorMessage(data: unknown, fallback: string): string {
+  const detail = (data as { detail?: unknown })?.detail;
+  if (typeof detail === "string") return detail;
+  // FastAPI validation errors: [{ msg: "..." }]
+  if (Array.isArray(detail) && typeof detail[0]?.msg === "string") return detail[0].msg;
+  return fallback;
+}
+
+interface RequestOptions extends Omit<RequestInit, "body"> {
+  body?: BodyInit | object;
+  auth?: boolean;
+}
+
+async function rawRequest(path: string, { body, auth = true, headers: extra, ...init }: RequestOptions = {}) {
+  const headers = new Headers(extra);
+  const token = auth ? getToken() : null;
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+
+  let payload: BodyInit | undefined;
+  if (body instanceof FormData || typeof body === "string" || body === undefined) {
+    payload = body as BodyInit | undefined;
+  } else {
     headers.set("Content-Type", "application/json");
+    payload = JSON.stringify(body);
   }
 
-  const response = await fetch(url, {
-    headers,
-    ...restOptions,
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, { ...init, headers, body: payload });
+  } catch {
+    throw new ApiError(NETWORK_ERROR, 0);
+  }
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    const errorMessage = errorData.detail || "An unexpected error occurred.";
-    if (response.status === 401 && typeof window !== "undefined") {
-      localStorage.removeItem("bizinsight_token");
-      localStorage.removeItem("bizinsight_user");
+    const data = await response.json().catch(() => ({}));
+    if (response.status === 401 && token) {
+      clearSession();
+      window.dispatchEvent(new Event(UNAUTHORIZED_EVENT));
     }
-    throw new Error(errorMessage);
+    throw new ApiError(errorMessage(data, `Request failed (${response.status}).`), response.status);
   }
+  return response;
+}
 
+async function request<T>(path: string, options?: RequestOptions): Promise<T> {
+  const response = await rawRequest(path, options);
   return response.json() as Promise<T>;
 }
 
 export const api = {
   // Auth
-  async login(body: any) {
-    return request<any>("/api/auth/login", {
-      method: "POST",
-      body: JSON.stringify(body),
-    });
-  },
+  login: (body: { username: string; password: string }) =>
+    request<AuthResponse>("/api/auth/login", { method: "POST", body, auth: false }),
 
-  async register(body: any) {
-    return request<any>("/api/auth/register", {
-      method: "POST",
-      body: JSON.stringify(body),
-    });
-  },
+  register: (body: { username: string; email: string; password: string; confirm_password: string }) =>
+    request<AuthResponse>("/api/auth/register", { method: "POST", body, auth: false }),
 
-  async me(token: string) {
-    return request<any>("/api/auth/me", {
-      method: "GET",
-      token,
-    });
-  },
+  me: () => request<User>("/api/auth/me"),
 
-  async googleLogin(body: { id_token: string }) {
-    // Use the local Next.js API route proxy (same-origin, no CORS)
-    // The proxy forwards to the Render backend server-to-server
-    const response = await fetch("/api/auth/google", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.detail || "Google authentication failed.");
+  async googleLogin(idToken: string): Promise<AuthResponse> {
+    // Same-origin Next.js route that forwards to the backend server-to-server.
+    let response: Response;
+    try {
+      response = await fetch("/api/auth/google", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id_token: idToken }),
+      });
+    } catch {
+      throw new ApiError(NETWORK_ERROR, 0);
     }
-    return response.json();
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new ApiError(errorMessage(data, "Google sign-in failed."), response.status);
+    return data as AuthResponse;
   },
 
   // Dashboard
-  async getSummary(token: string) {
-    return request<any>("/api/dashboard/summary", {
-      method: "GET",
-      token,
-    });
-  },
-
-  async getAlerts(token: string) {
-    return request<any>("/api/dashboard/alerts", {
-      method: "GET",
-      token,
-    });
-  },
+  getSummary: () => request<DashboardSummary>("/api/dashboard/summary"),
+  getAlerts: () => request<AlertStatus>("/api/dashboard/alerts"),
 
   // Reviews
-  async getReviews(token: string, page = 1, pageSize = 50) {
-    return request<any>(`/api/reviews?page=${page}&page_size=${pageSize}`, {
-      method: "GET",
-      token,
-    });
+  getReviews: (page = 1, pageSize = 50) =>
+    request<ReviewsResponse>(`/api/reviews?page=${page}&page_size=${pageSize}`),
+
+  uploadReviews(file: File) {
+    const body = new FormData();
+    body.append("file", file);
+    return request<UploadSummary>("/api/reviews/upload", { method: "POST", body });
   },
 
-  async uploadReviews(token: string, file: File) {
-    const formData = new FormData();
-    formData.append("file", file);
-
-    return request<any>("/api/reviews/upload", {
-      method: "POST",
-      body: formData,
-      token,
-    });
+  async exportReviews(): Promise<Blob> {
+    const response = await rawRequest("/api/reviews/export");
+    return response.blob();
   },
 
-  getExportUrl(token: string) {
-    return `${API_BASE_URL}/api/reviews/export?token=${encodeURIComponent(token || "")}`;
-  },
+  clearReviews: () => request<{ status: string; message: string }>("/api/admin/reviews", { method: "DELETE" }),
 
   // Clustering
-  async startClustering(token: string, mode: "negative" | "positive" = "negative") {
-    return request<any>("/api/clustering/run", {
-      method: "POST",
-      body: JSON.stringify({ mode }),
-      token,
-    });
-  },
+  startClustering: (mode: ClusteringMode) =>
+    request<ClusteringJobStatus>("/api/clustering/run", { method: "POST", body: { mode } }),
+  getClusteringStatus: (jobId: string) => request<ClusteringJobStatus>(`/api/clustering/status/${jobId}`),
+  getClusteringResults: (jobId: string) => request<ClusteringResult>(`/api/clustering/results/${jobId}`),
 
-  async getClusteringStatus(token: string, jobId: string) {
-    return request<any>(`/api/clustering/status/${jobId}`, {
-      method: "GET",
-      token,
-    });
-  },
-
-  async getClusteringResults(token: string, jobId: string) {
-    return request<any>(`/api/clustering/results/${jobId}`, {
-      method: "GET",
-      token,
-    });
-  },
-
-  // RAG Chat
-  async chat(token: string, body: { question: string; session_id?: string; use_memory?: boolean }) {
-    return request<any>("/api/rag/chat", {
-      method: "POST",
-      body: JSON.stringify(body),
-      token,
-    });
-  },
+  // RAG chat — sends the token when signed in; signed-out visitors get the demo dataset.
+  chat: (body: ChatRequest) => request<ChatResponse>("/api/rag/chat", { method: "POST", body }),
 
   // Admin
-  async getUsers(token: string) {
-    return request<any>("/api/admin/users", {
-      method: "GET",
-      token,
-    });
-  },
-
-  async deleteUser(token: string, userId: number) {
-    return request<any>(`/api/admin/users/${userId}`, {
-      method: "DELETE",
-      token,
-    });
-  },
-
-  async clearReviews(token: string) {
-    return request<any>("/api/admin/reviews", {
-      method: "DELETE",
-      token,
-    });
-  },
+  getUsers: () => request<{ users: AdminUser[] }>("/api/admin/users"),
+  deleteUser: (userId: number) =>
+    request<{ status: string; message: string }>(`/api/admin/users/${userId}`, { method: "DELETE" }),
 };
