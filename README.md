@@ -1,122 +1,146 @@
 # BizInsight AI
 
-BizInsight AI is an enterprise-grade customer feedback analytics platform that automates customer sentiment analysis, groups customer complaints into category-mapped topic clusters, and provides a Retrieval-Augmented Generation (RAG) assistant for querying review data.
+BizInsight AI is a customer-feedback analytics platform. Upload a CSV of reviews and get sentiment scoring, risk alerts, complaint clustering, and an AI assistant that answers questions using only your own reviews.
 
-This project was recently migrated from a legacy monolithic Streamlit application to a modern microservices architecture consisting of a Next.js 14 frontend and a FastAPI backend.
-
----
-
-## Key Features
-
-- **Automated Sentiment Analysis**: Instant processing of customer review datasets with metric tracking (Average Sentiment, analyzed review counts, risk thresholds).
-- **Categorized Complaint Clustering**: Unsupervised topic modeling grouping negative reviews into business-relevant categories (Payment, Delivery, Technical, Account, Product Quality, Customer Service, etc.).
-- **Retrieval-Augmented Generation (RAG) Chatbot**: A contextual question-answering assistant that responds to business queries using only the uploaded customer reviews, preventing hallucinations.
-- **Standalone Guest RAG Sandbox**: A public-facing chat interface that does not require user authentication, utilizing a direct ChromaDB integration.
-- **Structured Alerts**: Monitoring of risk levels, negative review spikes, and notifications.
+- **Frontend:** Next.js 14 (App Router), React, Tailwind CSS, Recharts
+- **Backend:** FastAPI, SQLite (dev) / PostgreSQL (prod), ChromaDB
+- **ML / NLP:** NLTK VADER sentiment, BERTopic + UMAP + HDBSCAN clustering, FastEmbed embeddings, LangChain RAG over OpenRouter
 
 ---
 
-## Architecture & Tech Stack
+## Features
 
-- **Frontend**: Next.js 14, React, Tailwind CSS, Lucide Icons.
-- **Backend API**: FastAPI, Uvicorn, Python, SQLite.
-- **Machine Learning & NLP**:
-  - Sentiment Analysis: NLTK VADER.
-  - Topic Clustering: BERTopic, HDBSCAN, UMAP.
-  - Sentence Embeddings: Sentence-Transformers (using `all-mpnet-base-v2`).
-- **Vector DB & RAG Pipeline**: LangChain, ChromaDB, OpenRouter (Gemini LLM).
+| Feature | What it does |
+|---|---|
+| **Sentiment dashboard** | Scores every review (VADER, −1 to +1); shows average sentiment, positive/neutral/negative split, a daily trend chart and top keywords. Export the scored data as CSV. |
+| **Risk alerts** | Low / medium / high risk from the share of negative reviews (25 % and 40 % thresholds), with the top issue keywords. |
+| **Topic clustering** | Groups negative (or positive) reviews into themes such as *Delivery Issues* or *Product Quality Issues* using BERTopic, running as a background job. |
+| **AI assistant (RAG)** | Answers questions grounded only in the signed-in user's reviews, with source quotes. Works without an LLM key in retrieval-only mode. |
+| **Public demo** | `/chat` lets signed-out visitors try the assistant on a bundled sample dataset — no account needed, and no user data is exposed. |
+| **Accounts** | Username/password and optional Google sign-in (JWT). The first account becomes the admin, who can manage users. |
+
+Every user's data — reviews, dashboards, clustering jobs and vectors — is isolated from every other user's.
 
 ---
 
-## Directory Structure
+## Repository layout
 
 ```text
 BizInsight-AI/
-├── bizinsight_api/          # FastAPI backend application
-│   ├── routes/              # API router files (auth, reviews, dashboard, clustering, admin)
-│   ├── models/              # Database models and schemas
-│   └── main.py              # Backend entry point
-├── bizinsight-web/          # Next.js 14 frontend application
-│   ├── src/
-│   │   ├── app/             # Next.js App Router (dashboard pages, chat sandbox, landing page)
-│   │   ├── components/      # UI components
-│   │   └── lib/             # API client utilities
-│   └── public/              # Static assets
-├── rag_api/                 # Core RAG chatbot service logic
-├── clustering/              # Clustering algorithms and category mapping
-├── database.py              # Database initialization and connection helpers
-├── sentiment.py             # NLTK VADER sentiment analyzer wrapper
-├── download_model.py        # Utility to download NLTK data and models
-├── sync_vectors.py          # Vector store synchronization script
-└── requirements.txt         # Backend Python dependencies
+├── backend/
+│   ├── bizinsight_api/        # FastAPI app: main.py, config.py, routes/, models/
+│   ├── rag_api/               # RAG assistant: chains, vector store, per-user indexing
+│   ├── clustering/            # BERTopic clustering pipeline
+│   ├── data/demo_reviews.csv  # Sample dataset for the public demo chat
+│   ├── tests/                 # pytest suite
+│   ├── database.py            # SQLite / PostgreSQL access
+│   ├── sentiment.py           # VADER scoring
+│   ├── download_model.py      # Build-time model downloads
+│   ├── sync_vectors.py        # Rebuild the vector index from the database
+│   └── Dockerfile
+├── frontend/                  # Next.js app (src/app, src/components, src/lib)
+├── data/samples/              # Sample review CSVs to try uploads with
+├── docs/ARCHITECTURE.md
+├── Dockerfile, cloudbuild.yaml  # Backend image for Google Cloud Run
+└── render.yaml                  # Backend blueprint for Render
 ```
 
 ---
 
-## Installation & Setup
+## Running locally
 
-### 1. Clone the Repository
+**Prerequisites:** Python 3.11+, Node.js 20+.
+
+### 1. Backend
 
 ```bash
-git clone https://github.com/Prateekiiitg56/BizInsight-AI.git
-cd BizInsight-AI
+cd backend
+python -m venv .venv
+source .venv/bin/activate          # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+python download_model.py           # VADER lexicon + clustering model
+cp .env.example .env               # then set JWT_SECRET (and optionally OPENROUTER_API_KEY)
+uvicorn bizinsight_api.main:app --port 8001 --reload
 ```
 
-### 2. Set Up the Backend API
+API docs: http://localhost:8001/docs
 
-1. Navigate to the project root directory and set up a virtual environment:
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows, use: venv\Scripts\activate
-   ```
+### 2. Frontend
 
-2. Install the required Python packages:
-   ```bash
-   pip install -r requirements.txt
-   ```
+```bash
+cd frontend
+cp .env.example .env.local         # NEXT_PUBLIC_API_URL=http://localhost:8001
+npm install
+npm run dev
+```
 
-3. Download the NLTK and SentenceTransformer models:
-   ```bash
-   python download_model.py
-   ```
+Open http://localhost:3000 and create an account (the first account is the admin).
 
-4. Configure the environment variables by creating a `.env` file in the root directory:
-   ```env
-   OPENROUTER_API_KEY=your_openrouter_api_key_
-   ```
+### 3. Tests and checks
 
-5. Start the FastAPI backend server:
-   ```bash
-   uvicorn bizinsight_api.main:app --host 0.0.0.0 --port 8001 --reload
-   ```
+```bash
+cd backend && python -m pytest -q tests
+cd frontend && npm run lint && npx tsc --noEmit && npm run build
+```
 
-### 3. Set Up the Frontend
-
-1. Navigate to the `bizinsight-web` directory:
-   ```bash
-   cd bizinsight-web
-   ```
-
-2. Install Node.js dependencies:
-   ```bash
-   npm install
-   ```
-
-3. Start the Next.js development server:
-   ```bash
-   npm run dev
-   ```
-
-4. Open [http://localhost:3000](http://localhost:3000) in your browser.
+CI runs the same checks on every push and pull request (`.github/workflows/ci.yml`).
 
 ---
 
-## CSV File Requirements
+## Configuration
 
-To upload review datasets, the CSV files must include at least one column labeled `review` containing the textual customer feedback.
+### Backend (`backend/.env.example` lists everything)
+
+| Variable | Required | Description |
+|---|---|---|
+| `JWT_SECRET` | **Yes, in production** | Long random string used to sign login tokens. |
+| `FRONTEND_URL` | Yes, in production | Comma-separated frontend origin(s) allowed by CORS. |
+| `OPENROUTER_API_KEY` | No | Enables AI-written answers. Without it the assistant lists the most relevant reviews. |
+| `GOOGLE_CLIENT_ID` | No | Enables Google sign-in (must match the frontend's client ID). |
+| `DATABASE_URL` | No | PostgreSQL URL. Defaults to a local SQLite file. |
+| `CHROMA_HOST` / `CHROMA_PORT` | No | Remote ChromaDB server. Defaults to a local `chroma_db/` directory. |
+| `LLM_MODEL` | No | OpenRouter model slug (default `openai/gpt-4o-mini`). |
+
+### Frontend (`frontend/.env.example`)
+
+| Variable | Description |
+|---|---|
+| `NEXT_PUBLIC_API_URL` | Backend URL, e.g. `https://your-api.onrender.com`. |
+| `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | Optional. Shows the "Continue with Google" button. |
 
 ---
 
-## Authors & Acknowledgments
+## Deployment
 
-- **Prateek Singh** - AI & Software Developer
+**Frontend → Vercel.** Import the repo, set the root directory to `frontend` (or use the root `vercel.json`), and set `NEXT_PUBLIC_API_URL` (plus `NEXT_PUBLIC_GOOGLE_CLIENT_ID` if used). For Google sign-in, add the site origin as an authorized JavaScript origin and redirect URI in Google Cloud Console.
+
+**Backend → any of:**
+- **Render:** `render.yaml` is a ready blueprint (it generates `JWT_SECRET`; fill in `FRONTEND_URL` and optional keys).
+- **Google Cloud Run:** `cloudbuild.yaml` builds the root `Dockerfile` and deploys it.
+- **Docker anywhere / Hugging Face Spaces:** `docker build -t bizinsight-api backend && docker run -p 8080:8080 -e JWT_SECRET=... bizinsight-api`
+
+**Production notes**
+- Use PostgreSQL (`DATABASE_URL`) on hosts with ephemeral disks; SQLite data is lost when the container restarts.
+- The vector index is derived data: it rebuilds automatically from the database for each user, or all at once with `python sync_vectors.py`.
+- Clustering jobs are held in memory, so run the API as a single instance (or one worker) unless you add a shared job store.
+- Clustering loads PyTorch models and needs roughly 1 GB+ of RAM; the rest of the API runs in ~512 MB.
+
+---
+
+## CSV format
+
+Sample files to try are in [`data/samples/`](data/samples). The file needs a column named `review` (case-insensitive) with one review per row. Other columns are ignored. Maximum size is 10 MB (configurable with `MAX_UPLOAD_MB`).
+
+```csv
+review
+"Delivery was two days late."
+"Great quality, would buy again!"
+```
+
+---
+
+## License
+
+See [LICENSE.md](LICENSE.md). Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
+
+**Author:** Prateek Singh

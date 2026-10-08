@@ -84,3 +84,9 @@ models/finetuned_complaint_model_final/
 # Logs
 logs/
 *.log
+
+# TypeScript
+*.tsbuildinfo
+
+# Runtime data
+nltk_data/

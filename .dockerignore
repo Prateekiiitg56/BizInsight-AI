@@ -1,0 +1,15 @@
+# Only the backend is needed for the API image.
+frontend/
+data/
+tests/
+docs/
+.git/
+**/__pycache__/
+**/*.py[cod]
+**/.env
+**/*.db
+**/chroma_db/
+**/.cache/
+**/nltk_data/
+backend/models/
+backend/tests/
