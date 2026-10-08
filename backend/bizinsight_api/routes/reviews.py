@@ -2,44 +2,47 @@
 Review routes — CSV upload with sentiment scoring, review listing, CSV export.
 """
 
-import os
-import io
 import csv
-import hashlib
+import io
+import logging
+import threading
+
 import pandas as pd
-from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Query
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from fastapi.responses import StreamingResponse
 
-import sys
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
-
-from database import insert_feedback_bulk, fetch_feedback
+from database import fetch_feedback, fetch_feedback_page, insert_feedback_bulk
+from sentiment import get_sentiment
+from bizinsight_api.config import HIGH_RISK_THRESHOLD, MAX_UPLOAD_BYTES, MAX_UPLOAD_MB
 from bizinsight_api.routes.auth import get_current_user
-from bizinsight_api.models.schemas import (
-    UploadSummary, ReviewsResponse, ReviewItem
-)
+from bizinsight_api.models.schemas import ReviewItem, ReviewsResponse, UploadSummary
 
-import nltk
-from nltk.sentiment.vader import SentimentIntensityAnalyzer
-
-nltk_dir = os.getenv("NLTK_DATA", "/tmp/nltk_data")
-os.makedirs(nltk_dir, exist_ok=True)
-if nltk_dir not in nltk.data.path:
-    nltk.data.path.append(nltk_dir)
-
-try:
-    nltk.data.find("sentiment/vader_lexicon.zip")
-except LookupError:
-    nltk.download("vader_lexicon", download_dir=nltk_dir, quiet=True)
-
-vader_analyzer = SentimentIntensityAnalyzer()
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/reviews", tags=["Reviews"])
 
 
-def get_sentiment(text: str) -> float:
-    """VADER compound score — same logic as original app.py."""
-    return vader_analyzer.polarity_scores(text)["compound"]
+def _sync_vectors_in_background(user_id: int) -> None:
+    """Refresh the user's RAG index without blocking the upload response."""
+    def _run():
+        try:
+            from rag_api.indexing import sync_user_reviews
+            sync_user_reviews(user_id)
+        except Exception as e:
+            logger.warning(f"Vector sync skipped for user {user_id}: {e}")
+
+    threading.Thread(target=_run, daemon=True).start()
+
+
+def _read_csv(contents: bytes) -> pd.DataFrame:
+    for encoding in ("utf-8-sig", "latin-1"):
+        try:
+            return pd.read_csv(io.BytesIO(contents), encoding=encoding)
+        except UnicodeDecodeError:
+            continue
+        except Exception:
+            break
+    raise HTTPException(status_code=400, detail="Could not parse the file. Make sure it is a valid CSV.")
 
 
 @router.post("/upload", response_model=UploadSummary)
@@ -47,75 +50,46 @@ async def upload_reviews(
     file: UploadFile = File(...),
     current_user: dict = Depends(get_current_user),
 ):
-    """
-    Accept a CSV file with a 'review' column, run sentiment scoring,
-    store in SQLite, and return summary stats.
-    """
-    if not file.filename.endswith(".csv"):
-        raise HTTPException(status_code=400, detail="Only CSV files are accepted.")
+    """Accept a CSV with a 'review' column, score sentiment, store it, and return summary stats."""
+    if not (file.filename or "").lower().endswith(".csv"):
+        raise HTTPException(status_code=400, detail="Only .csv files are accepted.")
 
-    contents = await file.read()
+    contents = await file.read(MAX_UPLOAD_BYTES + 1)
+    if len(contents) > MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail=f"File is too large. The limit is {MAX_UPLOAD_MB} MB.")
+    if not contents.strip():
+        raise HTTPException(status_code=400, detail="The file is empty.")
 
-    try:
-        df = pd.read_csv(io.BytesIO(contents))
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Failed to parse CSV: {str(e)}")
+    df = _read_csv(contents)
 
-    if "review" not in df.columns:
+    review_col = next((c for c in df.columns if str(c).strip().lower() == "review"), None)
+    if review_col is None:
         raise HTTPException(
             status_code=400,
-            detail="That file doesn't have a 'review' column. Add one and upload again.",
+            detail="The CSV needs a column named 'review'. Rename your review text column and try again.",
         )
 
-    # Clean
-    df = df.dropna(subset=["review"])
-    df["review"] = df["review"].astype(str).str.strip()
-    df = df[df["review"] != ""]
+    reviews = df[review_col].dropna().astype(str).str.strip()
+    reviews = reviews[reviews != ""]
+    if reviews.empty:
+        raise HTTPException(status_code=400, detail="No reviews found in the 'review' column.")
 
-    if df.empty:
-        raise HTTPException(
-            status_code=400,
-            detail="No valid reviews found after cleaning. The file appears to be empty.",
-        )
+    scores = reviews.apply(get_sentiment)
+    insert_feedback_bulk(list(zip(reviews, scores)), user_id=current_user["id"])
+    _sync_vectors_in_background(current_user["id"])
 
-    # Score
-    df["sentiment"] = df["review"].apply(get_sentiment)
-    reviews_data = list(zip(df["review"], df["sentiment"]))
-    insert_feedback_bulk(reviews_data, user_id=current_user["id"])
-
-    # Auto-sync to RAG vector memory in background thread to prevent upload latency / memory spikes
-    def _async_vector_sync(data_to_sync, uid):
-        try:
-            from rag_api.api import get_chain_manager
-            cm = get_chain_manager()
-            doc_objs = [
-                {
-                    "page_content": row[0],
-                    "metadata": {"sentiment": float(row[1]), "user_id": uid},
-                }
-                for row in data_to_sync
-            ]
-            cm.vector_store_manager.add_documents(doc_objs, clear_existing=False)
-        except Exception as sync_err:
-            print(f"ChromaDB auto-sync skipped: {sync_err}")
-
-    import threading
-    threading.Thread(target=_async_vector_sync, args=(reviews_data, current_user["id"]), daemon=True).start()
-
-    # Summary
-    positive = int((df["sentiment"] > 0).sum())
-    negative = int((df["sentiment"] < 0).sum())
-    neutral = int((df["sentiment"] == 0).sum())
-    total = len(df)
-    negative_percent = round((negative / total) * 100, 2) if total > 0 else 0
+    total = len(scores)
+    positive = int((scores > 0).sum())
+    negative = int((scores < 0).sum())
+    negative_percent = round(negative / total * 100, 2)
 
     return UploadSummary(
         total_processed=total,
         positive=positive,
         negative=negative,
-        neutral=neutral,
+        neutral=total - positive - negative,
         negative_percent=negative_percent,
-        alert_triggered=negative_percent > 40,
+        alert_triggered=negative_percent >= HIGH_RISK_THRESHOLD,
     )
 
 
@@ -125,53 +99,26 @@ def list_reviews(
     page_size: int = Query(50, ge=1, le=200),
     current_user: dict = Depends(get_current_user),
 ):
-    """Paginated review list for the current user."""
-    data = fetch_feedback(user_id=current_user["id"])
-    total = len(data)
-
-    start = (page - 1) * page_size
-    end = start + page_size
-    page_data = data[start:end]
-
-    reviews = [
-        ReviewItem(review=row[0], sentiment=row[1], date=str(row[2]))
-        for row in page_data
-    ]
-
+    """Paginated review list for the current user, newest first."""
+    rows, total = fetch_feedback_page(current_user["id"], limit=page_size, offset=(page - 1) * page_size)
+    reviews = [ReviewItem(review=r[0], sentiment=r[1], date=str(r[2])) for r in rows]
     return ReviewsResponse(reviews=reviews, total=total, page=page, page_size=page_size)
 
 
 @router.get("/export")
-def export_csv(token: str = Query(..., description="JWT token passed as query param for browser download")):
-    """Stream processed reviews as a CSV file download.
-    
-    Uses query-param token instead of Authorization header because
-    window.open() in the browser cannot set custom headers.
-    """
-    import jwt as pyjwt
-    JWT_SECRET = os.getenv("JWT_SECRET", "bizinsight-dev-secret-change-in-production")
-    try:
-        payload = pyjwt.decode(token, JWT_SECRET, algorithms=["HS256"])
-        current_user = {"id": payload["user_id"], "username": payload["username"], "role": payload["role"]}
-    except pyjwt.ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Token has expired. Please log in again.")
-    except pyjwt.InvalidTokenError:
-        raise HTTPException(status_code=401, detail="Invalid token.")
-
+def export_csv(current_user: dict = Depends(get_current_user)):
+    """Download the current user's scored reviews as CSV."""
     data = fetch_feedback(user_id=current_user["id"])
-
     if not data:
-        raise HTTPException(status_code=404, detail="No reviews to export. Upload some first.")
+        raise HTTPException(status_code=404, detail="No reviews to export yet. Upload a CSV first.")
 
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow(["review", "sentiment", "date"])
-    for row in data:
-        writer.writerow(row)
+    writer.writerows(data)
 
-    output.seek(0)
     return StreamingResponse(
         iter([output.getvalue()]),
         media_type="text/csv",
-        headers={"Content-Disposition": "attachment; filename=bizinsight_feedback.csv"},
+        headers={"Content-Disposition": "attachment; filename=bizinsight_reviews.csv"},
     )

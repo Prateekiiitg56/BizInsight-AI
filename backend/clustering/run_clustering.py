@@ -2,9 +2,8 @@
 Run Clustering Module - BERTopic with embedding-based category mapping
 """
 
-import numpy as np
-from typing import List, Dict, Optional
-from sklearn.metrics import silhouette_score
+from typing import Any, Dict, List, Optional
+
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from collections import Counter
@@ -28,7 +27,7 @@ CATEGORY_EXAMPLES = {
     "Return/Refund": "return refund money back reimbursement credit not received"
 }
 
-#postive categories with sentences
+# Positive categories with sentences
 POSITIVE_CATEGORY_EXAMPLES = {
     "Fast Delivery": "fast delivery quick shipping arrived early on time speedy dispatch",
     "Great Value": "worth every penny great price affordable cheap best value money",
@@ -100,7 +99,7 @@ def make_unique_business_name(examples: List[str]) -> str:
 
 def map_cluster_to_category(
     cluster_examples: List[str],
-    embedding_model: SentenceTransformer,
+    embedding_model: Any,
     similarity_threshold: float = 0.7,
     mode: str = "negative"
 ) -> Optional[str]:
@@ -156,9 +155,9 @@ def merge_duplicate_clusters(clusters: List[Dict]) -> List[Dict]:
         merged[name]["examples"].extend(c["example_reviews"][:2])
     
     result = []
-    for name, data in merged.items():
+    for idx, (name, data) in enumerate(merged.items()):
         result.append({
-            "id": hash(name) % 10000,
+            "id": idx,
             "name": name,
             "count": data["count"],
             "percentage": 0.0,
@@ -169,7 +168,7 @@ def merge_duplicate_clusters(clusters: List[Dict]) -> List[Dict]:
 
 def run_pipeline(
     reviews: List[str],
-    embedding_model: Optional[SentenceTransformer] = None,
+    embedding_model: Optional[Any] = None,
     min_topic_size: int = 10, # minimum number of reviews per cluster
     similarity_threshold: float = 0.4, # lower threshold for category mapping to allow more clusters to be categorized, can be tuned based on dataset
     verbose: bool = True ,
@@ -298,7 +297,7 @@ def run_pipeline(
         clusters.append({
             "id": int(topic_id),
             "name": cluster_name,
-            "count": size,
+            "count": int(size),
             "percentage": (size / total_reviews) * 100,
             "example_reviews": examples,
             "sample_review": examples[0] if examples else "No sample",
@@ -311,24 +310,6 @@ def run_pipeline(
     clusters.sort(key=lambda x: x["count"], reverse=True) # sort clusters by count after merging (largest first)
     n_topics = len(clusters)
     
-    # 6. Silhouette score (only if we have enough clusters and noise is not overwhelming, otherwise it may not be meaningful)
-    # Use this to see silhouette score on UMAP-reduced embeddings of non-noise reviews while testing different parameters
-    # try:
-    #     reduced_embeddings = topic_model.umap_model.embedding_ if hasattr(topic_model, 'umap_model') else None
-    #     if reduced_embeddings is not None and n_topics >= 2: # silhouette score requires at least 2 clusters and meaningful embeddings
-    #         non_noise_mask = np.array(topics) != -1 # only consider non-noise reviews for silhouette score
-    #         if np.sum(non_noise_mask) > n_topics: # need more non-noise reviews than clusters for silhouette score to be meaningful
-    #             sil_score = silhouette_score( # calculate silhouette score on UMAP-reduced embeddings of non-noise reviews
-    #                 reduced_embeddings[non_noise_mask], 
-    #                 np.array(topics)[non_noise_mask]
-    #             ) 
-    #         else:
-    #             sil_score = None
-    #     else:
-    #         sil_score = None
-    # except Exception:
-    #     sil_score = None
-    
     return {
         "success": True,
         "message": f"Found {n_topics} {'positive' if mode == 'positive' else 'complaint'} topics with {noise_percentage:.1f}% noise",
@@ -336,10 +317,7 @@ def run_pipeline(
         "n_clusters": n_topics,
         "n_topics": n_topics,
         "labels": topics,
-        "noise_count": noise_count,
+        "noise_count": int(noise_count),
         "noise_percentage": noise_percentage,
-        # "silhouette_score": round(sil_score, 4) if sil_score else None,
         "clusters": clusters,
-        "topic_model": topic_model,
-        "cleaned_reviews": cleaned_reviews
     }

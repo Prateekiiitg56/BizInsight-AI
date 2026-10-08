@@ -1,18 +1,22 @@
 import logging
-from langchain_classic.chains import RetrievalQA, ConversationalRetrievalChain
-from langchain_classic.memory import ConversationBufferMemory
-from langchain_openai import ChatOpenAI
-from langchain_core.prompts import PromptTemplate
-from langchain_classic.retrievers.multi_query import MultiQueryRetriever
+import threading
+from collections import OrderedDict
 
-from .vector_store import VectorStoreManager
+from langchain_classic.chains import ConversationalRetrievalChain, RetrievalQA
+from langchain_classic.memory import ConversationBufferMemory
+from langchain_classic.retrievers.multi_query import MultiQueryRetriever
+from langchain_core.prompts import PromptTemplate
+from langchain_openai import ChatOpenAI
+
 from .config import RAGConfig
+from .vector_store import get_vector_store_manager
 
 logger = logging.getLogger(__name__)
-logging.getLogger("langchain.retrievers.multi_query").setLevel(logging.INFO)
 
-# We define a custom prompt template that instructs the LLM to provide structured, accurate answers based strictly on the retrieved customer reviews. The structured format (Summary → Key Themes → Notable Quotes) prevents raw review dumps and hallucinated statistics.
-custom_prompt_template = """You are a senior Business Intelligence analyst answering questions about customer feedback.
+# A structured format (Summary → Key Themes → Notable Quotes) keeps answers grounded
+# and prevents raw review dumps and fabricated statistics.
+CUSTOM_PROMPT = PromptTemplate(
+    template="""You are a senior Business Intelligence analyst answering questions about customer feedback.
 
 Customer Reviews Retrieved:
 {context}
@@ -37,121 +41,87 @@ Rules:
 - ONLY use data from the Customer Reviews above. Do NOT invent statistics or numbers.
 - If the reviews do not contain relevant information, say exactly: "The customer reviews do not contain information about this topic."
 - Never repeat the same review text multiple times.
-- Count themes only from the provided reviews, do not fabricate numbers like "184 mentions".
 - Keep the response concise and professional.
-"""
-
-# By using this custom prompt, we guide the LLM to provide structured, accurate answers based on the retrieved customer reviews while preventing raw dumps and fabricated statistics.
-CUSTOM_PROMPT = PromptTemplate(
-    template=custom_prompt_template, 
-    input_variables=["context", "question"]
+""",
+    input_variables=["context", "question"],
 )
 
-# The RAGChainManager class is responsible for managing the retrieval-augmented generation chains used in the RAG API. It initializes the vector store manager, the LLM, and the re-ranker model. The get_qa_chain method constructs a RetrievalQA chain that incorporates multi-query expansion and re-ranking to provide accurate answers based on retrieved documents. The get_conversational_chain method creates a ConversationalRetrievalChain that maintains conversation history and also uses multi-query expansion and re-ranking for enhanced retrieval during chat interactions. Both methods utilize the custom prompt to ensure that the LLM's responses are grounded in the retrieved customer reviews.
-class RAGChainManager:
-    def __init__(self):
-        # Initialize the Vector Store Manager, which handles interactions with ChromaDB for document retrieval. This manager provides methods to get retrievers with specific filters and to add new documents to the vector store
-        self.vector_store_manager = VectorStoreManager() 
-        
-        # Initialize the LLM (Language Model) using ChatOpenAI, configured with the model name, API key, temperature, max tokens, and retry settings defined in RAGConfig. This LLM will be used to generate answers based on the retrieved documents and the custom prompt.
-        self.llm = ChatOpenAI(
-            openai_api_key=RAGConfig.get_api_key(),
-            openai_api_base=RAGConfig.LLM_BASE_URL,
-            model_name=RAGConfig.LLM_MODEL,
-            temperature=RAGConfig.LLM_TEMPERATURE,
-            max_tokens=RAGConfig.LLM_MAX_TOKENS,
-            max_retries=2,
-            default_headers={
-                "HTTP-Referer": "https://bizinsight-ai.com",
-                "X-Title": "BizInsight AI",
-            }
-        )
 
-        self._qa_chain = None
-        self._conv_chains = {}  
+class RAGChainManager:
+    """Builds retrieval chains: multi-query expansion → optional cross-encoder re-ranking → LLM."""
+
+    def __init__(self):
+        self.vector_store_manager = get_vector_store_manager()
+        self._llm = None
+        self._conv_chains: "OrderedDict[str, ConversationalRetrievalChain]" = OrderedDict()
+        self._conv_lock = threading.Lock()
         self._compressor = None
 
     @property
+    def llm(self) -> ChatOpenAI:
+        """Created on first use so retrieval-only mode works without an API key."""
+        if self._llm is None:
+            self._llm = ChatOpenAI(
+                api_key=RAGConfig.get_api_key(),
+                base_url=RAGConfig.LLM_BASE_URL,
+                model=RAGConfig.LLM_MODEL,
+                temperature=RAGConfig.LLM_TEMPERATURE,
+                max_tokens=RAGConfig.LLM_MAX_TOKENS,
+                max_retries=2,
+                timeout=60,
+                default_headers={"X-Title": "BizInsight AI"},
+            )
+        return self._llm
+
+    @property
     def compressor(self):
+        """Cross-encoder re-ranker, loaded lazily. Returns None if it can't be loaded."""
         if self._compressor is None:
             try:
-                from langchain_community.cross_encoders import HuggingFaceCrossEncoder
                 from langchain_classic.retrievers.document_compressors import CrossEncoderReranker
-                logger.info("Loading Re-Ranker Model lazily...")
-                reranker_model = HuggingFaceCrossEncoder(model_name="cross-encoder/ms-marco-MiniLM-L-6-v2")
-                self._compressor = CrossEncoderReranker(model=reranker_model, top_n=8)
+                from langchain_community.cross_encoders import HuggingFaceCrossEncoder
+                logger.info("Loading cross-encoder re-ranker...")
+                model = HuggingFaceCrossEncoder(model_name="cross-encoder/ms-marco-MiniLM-L-6-v2")
+                self._compressor = CrossEncoderReranker(model=model, top_n=8)
             except Exception as e:
-                logger.warning(f"Re-Ranker Model could not be loaded ({e}). Continuing without CrossEncoder re-ranking...")
-                self._compressor = False  # Mark as failed to avoid retrying on every request
-        return self._compressor if self._compressor is not False else None
+                logger.warning(f"Re-ranker unavailable ({e}); continuing without re-ranking.")
+                self._compressor = False  # don't retry on every request
+        return self._compressor or None
 
-    # The get_qa_chain method constructs a RetrievalQA chain that incorporates multi-query expansion and re-ranking to provide accurate answers based on retrieved documents. It first creates a base retriever from the vector store manager, then wraps it with a MultiQueryRetriever to generate multiple queries for better context coverage, and finally applies a ContextualCompressionRetriever with the cross-encoder re-ranker to filter down to the most relevant documents before passing them to the LLM for answer generation.
-    def get_qa_chain(self, search_filter=None):
-        # 1. Base Retrieval (Fetch quickly from ChromaDB)
-        base_retriever = self.vector_store_manager.get_retriever(search_filter=search_filter)
-        
-        # 2. Multi-Query Expansion (Brainstorm 3 questions to catch more context)
-        mq_retriever = MultiQueryRetriever.from_llm(retriever=base_retriever, llm=self.llm)
-        
-        # 3. Re-Ranking (Grade all results and keep only the top 8 best matches)
-        comp = self.compressor
-        if comp is not None:
+    def _build_retriever(self, user_id: int, search_filter=None):
+        base = self.vector_store_manager.get_retriever(user_id, search_filter=search_filter)
+        retriever = MultiQueryRetriever.from_llm(retriever=base, llm=self.llm)
+        if self.compressor is not None:
             from langchain_classic.retrievers import ContextualCompressionRetriever
-            final_retriever = ContextualCompressionRetriever(
-                base_compressor=comp,
-                base_retriever=mq_retriever
-            )
-        else:
-            final_retriever = mq_retriever
-        
-        # 4. Build the final RetrievalQA chain with the compressed retriever and custom prompt
+            retriever = ContextualCompressionRetriever(base_compressor=self.compressor, base_retriever=retriever)
+        return retriever
+
+    def get_qa_chain(self, user_id: int, search_filter=None):
         return RetrievalQA.from_chain_type(
             llm=self.llm,
-            chain_type="stuff", # We use "stuff" to feed all retrieved docs into the prompt
-            retriever=final_retriever, 
-            return_source_documents=True, 
+            chain_type="stuff",
+            retriever=self._build_retriever(user_id, search_filter),
+            return_source_documents=True,
             chain_type_kwargs={"prompt": CUSTOM_PROMPT},
-            verbose=False
         )
 
-    # The get_conversational_chain method creates a ConversationalRetrievalChain that maintains conversation history and also uses multi-query expansion and re-ranking for enhanced retrieval during chat interactions. It constructs a unique chain key based on the session ID and search filter to manage multiple conversational chains. Each chain incorporates a ConversationBufferMemory to keep track of the chat history, and it uses the same multi-query and re-ranking retrieval strategy as the get_qa_chain method to ensure that the LLM's responses are based on the most relevant documents from the vector store.
-    def get_conversational_chain(self, session_id: str, search_filter=None):
-        chain_key = f"{session_id}_{str(search_filter)}" # Unique key for this conversational chain based on session and filter
-        
-        # If a chain for this session and filter doesn't exist, we create it. This allows us to maintain separate conversation histories and retrieval contexts for different users or different types of queries (e.g., positive vs negative sentiment).
-        if chain_key not in self._conv_chains:
-            # We set up a ConversationBufferMemory to keep track of the chat history for this session
-            memory = ConversationBufferMemory(
-                memory_key="chat_history",
-                return_messages=True,
-                output_key="answer"
-            )
-            
-            # Layer 1: Base Retriever
-            base_retriever = self.vector_store_manager.get_retriever(search_filter=search_filter)
-            
-            # Layer 2: Multi-Query
-            mq_retriever = MultiQueryRetriever.from_llm(retriever=base_retriever, llm=self.llm)
-            
-            # Layer 3: Cross-Encoder Re-Ranker
-            comp = self.compressor
-            if comp is not None:
-                from langchain_classic.retrievers import ContextualCompressionRetriever
-                final_retriever = ContextualCompressionRetriever(
-                    base_compressor=comp,
-                    base_retriever=mq_retriever
-                )
-            else:
-                final_retriever = mq_retriever
-            
-            # Final Chain: Conversational Retrieval Chain with memory and custom prompt
-            chain = ConversationalRetrievalChain.from_llm(
-                llm=self.llm,
-                retriever=compression_retriever, 
-                memory=memory, 
-                return_source_documents=True,
-                combine_docs_chain_kwargs={"prompt": CUSTOM_PROMPT},
-                verbose=False
-            )
-            self._conv_chains[chain_key] = chain # Store the chain in the dictionary with its unique key for future retrieval
-        return self._conv_chains[chain_key] # Return the conversational chain for this session.
+    def get_conversational_chain(self, user_id: int, session_id: str, search_filter=None):
+        key = f"{user_id}:{session_id}:{search_filter}"
+        with self._conv_lock:
+            chain = self._conv_chains.get(key)
+            if chain is not None:
+                self._conv_chains.move_to_end(key)
+                return chain
+
+        chain = ConversationalRetrievalChain.from_llm(
+            llm=self.llm,
+            retriever=self._build_retriever(user_id, search_filter),
+            memory=ConversationBufferMemory(memory_key="chat_history", return_messages=True, output_key="answer"),
+            return_source_documents=True,
+            combine_docs_chain_kwargs={"prompt": CUSTOM_PROMPT},
+        )
+        with self._conv_lock:
+            self._conv_chains[key] = chain
+            while len(self._conv_chains) > RAGConfig.MAX_CHAT_SESSIONS:
+                self._conv_chains.popitem(last=False)
+        return chain

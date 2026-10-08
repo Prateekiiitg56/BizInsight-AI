@@ -100,6 +100,7 @@ def initialize_database():
             except sqlite3.OperationalError:
                 pass
 
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_feedback_user_id ON feedback (user_id)")
         conn.commit()
 
 
@@ -165,22 +166,17 @@ def get_user_by_username(username):
         logger.error(f"Get User Error: {e}")
         return None
 
-def get_user_email(user_id):
-    try:
-        with get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute(
-                f"SELECT email FROM users WHERE id={P}",
-                (user_id,)
-            )
-            row = cursor.fetchone()
-            return row[0] if row else None
-    except Exception as e:
-        logger.error(f"Get Email Error: {e}")
-        return None
 
 def verify_password(plain_password, hashed_password):
-    return bcrypt.checkpw(plain_password.encode(), hashed_password.encode())
+    """Check a password against its bcrypt hash.
+
+    Google OAuth accounts store a non-bcrypt placeholder, which bcrypt
+    rejects with ValueError — treat that as a failed match, not a crash.
+    """
+    try:
+        return bcrypt.checkpw(plain_password.encode(), hashed_password.encode())
+    except ValueError:
+        return False
 
 
 def get_user_by_email(email):
@@ -268,23 +264,8 @@ def delete_user(user_id):
 
 # ─── Feedback Functions ───────────────────────────────────────────────────────
 
-def insert_feedback(review, sentiment, user_id):
-    if review is None or str(review).strip() == "":
-        raise ValueError("Review cannot be empty.")
-    try:
-        with get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute(
-                f"INSERT INTO feedback (review, sentiment, user_id) VALUES ({P}, {P}, {P})",
-                (str(review), sentiment, user_id)
-            )
-            conn.commit()
-            return True
-    except Exception as e:
-        logger.error(f"Insert Error: {e}")
-        raise
 
-def insert_feedback_bulk(reviews_data, user_id):   
+def insert_feedback_bulk(reviews_data, user_id):
     try:
         with get_connection() as conn:
             cursor = conn.cursor()
@@ -323,20 +304,36 @@ def fetch_feedback(user_id):
         return []
 
 
-def fetch_all_feedback():
-    try:
-        with get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("""
-                SELECT f.review, f.sentiment, f.created_at, u.username
-                FROM feedback f
-                LEFT JOIN users u ON f.user_id = u.id
-                ORDER BY f.created_at DESC
-            """)
-            return cursor.fetchall()
-    except Exception as e:
-        logger.error(f"Fetch All Feedback Error: {e}")
-        return []
+
+def fetch_feedback_page(user_id, limit, offset):
+    """Return (rows, total) for one page of a user's reviews, newest first."""
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute(f"SELECT COUNT(*) FROM feedback WHERE user_id = {P}", (user_id,))
+        total = cursor.fetchone()[0]
+        cursor.execute(f"""
+            SELECT review, sentiment, created_at
+            FROM feedback
+            WHERE user_id = {P}
+            ORDER BY created_at DESC, id DESC
+            LIMIT {P} OFFSET {P}
+        """, (user_id, limit, offset))
+        return cursor.fetchall(), total
+
+
+def fetch_feedback_for_indexing(user_id=None):
+    """Return (id, review, sentiment, created_at, user_id) rows for vector indexing.
+
+    When user_id is None, rows for every user are returned.
+    """
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        query = "SELECT id, review, sentiment, created_at, user_id FROM feedback"
+        if user_id is None:
+            cursor.execute(query)
+        else:
+            cursor.execute(f"{query} WHERE user_id = {P}", (user_id,))
+        return cursor.fetchall()
 
 
 def clear_data(user_id):

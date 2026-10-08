@@ -4,27 +4,21 @@ All endpoints return typed JSON through these schemas.
 """
 
 from pydantic import BaseModel, Field
-from typing import List, Optional, Dict, Any
-from datetime import datetime
+from typing import List, Literal, Optional
 
 
 # ─── Auth ─────────────────────────────────────────────────────────────────────
 
 class RegisterRequest(BaseModel):
-    username: str = Field(..., min_length=1, max_length=50)
-    email: str = Field(..., min_length=5)
-    password: str = Field(..., min_length=6)
-    confirm_password: str = Field(..., min_length=6)
+    username: str = Field(..., max_length=50)
+    email: str = Field(..., max_length=254)
+    password: str = Field(..., max_length=128)
+    confirm_password: str = Field(..., max_length=128)
 
 
 class LoginRequest(BaseModel):
-    username: str
-    password: str
-
-
-class AuthResponse(BaseModel):
-    token: str
-    user: "UserInfo"
+    username: str = Field(..., max_length=50)
+    password: str = Field(..., max_length=128)
 
 
 class UserInfo(BaseModel):
@@ -32,6 +26,11 @@ class UserInfo(BaseModel):
     username: str
     email: str
     role: str
+
+
+class AuthResponse(BaseModel):
+    token: str
+    user: UserInfo
 
 
 class GoogleAuthRequest(BaseModel):
@@ -100,7 +99,7 @@ class AlertStatus(BaseModel):
 # ─── Clustering ───────────────────────────────────────────────────────────────
 
 class ClusteringRequest(BaseModel):
-    mode: str = "negative"  # "negative" or "positive"
+    mode: Literal["negative", "positive"] = "negative"
 
 
 class ClusterItem(BaseModel):
@@ -115,7 +114,6 @@ class ClusteringJobStatus(BaseModel):
     job_id: str
     status: str  # "pending", "running", "completed", "failed"
     message: Optional[str] = None
-    progress: Optional[float] = None
 
 
 class ClusteringResult(BaseModel):
@@ -125,20 +123,6 @@ class ClusteringResult(BaseModel):
     n_clusters: int
     noise_percentage: float
     clusters: List[ClusterItem]
-
-
-# ─── Chat ─────────────────────────────────────────────────────────────────────
-
-class ChatRequest(BaseModel):
-    question: str
-    session_id: Optional[str] = None
-    use_memory: bool = False
-
-
-class ChatResponse(BaseModel):
-    answer: str
-    sources: List[str]
-    session_id: Optional[str] = None
 
 
 # ─── Admin ────────────────────────────────────────────────────────────────────
@@ -154,9 +138,3 @@ class AdminUserItem(BaseModel):
 class AdminUsersResponse(BaseModel):
     users: List[AdminUserItem]
 
-
-# ─── Health ───────────────────────────────────────────────────────────────────
-
-class HealthResponse(BaseModel):
-    status: str
-    vector_count: Optional[int] = None

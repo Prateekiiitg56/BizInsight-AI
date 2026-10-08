@@ -1,109 +1,111 @@
-import logging 
-from typing import List, Dict, Any
-from langchain_chroma import Chroma   
-from .embeddings import get_embedding_model
+import logging
+import threading
+from typing import Any, Dict, Iterable, List, Optional
+
+from langchain_chroma import Chroma
+from langchain_core.documents import Document
+
 from .config import RAGConfig
+from .embeddings import get_embedding_model
 
 logger = logging.getLogger(__name__)
 
-# The VectorStoreManager class is responsible for managing interactions with the ChromaDB vector store. It initializes the embedding model and provides methods to get retrievers with specific filters and to add new documents to the vector store. 
+
+def build_where(user_id: int, search_filter: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """Chroma metadata filter scoping retrieval to one user's reviews, plus an optional extra condition."""
+    owner = {"user_id": user_id}
+    return {"$and": [owner, search_filter]} if search_filter else owner
+
+
 class VectorStoreManager:
+    """All ChromaDB access goes through here. Every document carries a `user_id`
+    in its metadata so one tenant's reviews are never retrieved for another."""
+
     def __init__(self):
-        # Initialize the embedding model using the get_embedding_model function, which ensures that we only load the model once and reuse it across the application for efficiency.
         self.embedding_model = get_embedding_model()
         self._vectorstore = None
+        self._init_lock = threading.Lock()
 
-    # The vectorstore property lazily initializes the Chroma vector store when it is first accessed. 
     @property
-    def vectorstore(self):
+    def vectorstore(self) -> Chroma:
         if self._vectorstore is None:
-            if RAGConfig.USE_REMOTE_CHROMA:
-                # Production: connect to remote ChromaDB server via HTTP
-                import chromadb
-                logger.info(f"Connecting to remote ChromaDB at {RAGConfig.CHROMA_HOST}:{RAGConfig.CHROMA_PORT}")
-                client = chromadb.HttpClient(
-                    host=RAGConfig.CHROMA_HOST,
-                    port=RAGConfig.CHROMA_PORT
-                )
-                self._vectorstore = Chroma(
-                    client=client,
-                    collection_name=RAGConfig.COLLECTION_NAME,
-                    embedding_function=self.embedding_model,
-                )
-            else:
-                # Local development: persist to local directory
-                self._vectorstore = Chroma(
-                    persist_directory=RAGConfig.CHROMA_PERSIST_DIR,
-                    collection_name=RAGConfig.COLLECTION_NAME,
-                    embedding_function=self.embedding_model,
-                )
+            # Chroma's client registry isn't safe to initialize from two threads at once
+            # (e.g. an upload's background sync racing a chat request).
+            with self._init_lock:
+                if self._vectorstore is None:
+                    self._vectorstore = self._connect()
         return self._vectorstore
-    
-    # The get_retriever method returns a retriever object that can be used to query the vector store. 
-    def get_retriever(self, search_filter=None, where_document=None):
-        # Auto-hydrate ChromaDB from database if vectorstore is empty (e.g. fresh container boot on Cloud Run)
-        try:
-            if self.vectorstore._collection.count() == 0:
-                logger.info("ChromaDB vector count is 0. Auto-syncing reviews from database...")
-                from sync_vectors import sync_reviews
-                sync_reviews(clear_existing=False)
-        except Exception as e:
-            logger.warning(f"Auto-sync hydration check skipped: {e}")
 
-        search_kwargs = {
-            "k": RAGConfig.TOP_K,     # final docs returned by vector stage
-            "fetch_k": 20,            # candidate pool for diversity selection
-            "lambda_mult": 0.4        # 0=more diverse, 1=more similar — lower for fewer duplicates
-        }
-
-        # We can apply a metadata filter to the retriever to only retrieve documents that match certain criteria (e.g., sentiment). 
-        if search_filter:
-            search_kwargs["filter"] = search_filter
-        # Additionally, we can apply a document-level filter to exclude certain documents based on their content or metadata.
-        if where_document:
-            search_kwargs["where_document"] = where_document
-
-        # We use Maximal Marginal Relevance (MMR) search to retrieve documents that are not only relevant to the query but also diverse among themselves, which can help provide richer context for the LLM when generating answers.
-        return self.vectorstore.as_retriever(
-            search_type="mmr",       
-            search_kwargs=search_kwargs
-        )
-    
-    # The add_documents method allows us to add new documents to the vector store. It first clears existing documents to avoid duplicates, then prepares the new documents in the required format and adds them to ChromaDB. 
-    def add_documents(self, documents: List[Dict[str, Any]], clear_existing: bool = False):
-        """Add documents to the vector store."""
-        from langchain_core.documents import Document
-        
-        # Only clear existing documents if explicitly requested
-        if clear_existing:
-            try:
-                existing_data = self.vectorstore.get()
-                if existing_data and existing_data["ids"]:
-                    self.vectorstore.delete(ids=existing_data["ids"])
-                    logger.info(f"Cleared {len(existing_data['ids'])} old documents.")
-            except Exception as e:
-                logger.warning(f"Could not clear old documents: {e}")
-
-        # 2. Prepare the new documents in the format required by ChromaDB, which includes page_content, metadata, and an optional ID. 
-        docs = [
-            Document(
-                page_content=doc["page_content"],
-                metadata=doc.get("metadata", {}),
-                id=doc.get("id")
+    def _connect(self) -> Chroma:
+        if RAGConfig.USE_REMOTE_CHROMA:
+            import chromadb
+            logger.info(f"Connecting to remote ChromaDB at {RAGConfig.CHROMA_HOST}:{RAGConfig.CHROMA_PORT}")
+            client = chromadb.HttpClient(host=RAGConfig.CHROMA_HOST, port=RAGConfig.CHROMA_PORT)
+            return Chroma(
+                client=client,
+                collection_name=RAGConfig.COLLECTION_NAME,
+                embedding_function=self.embedding_model,
             )
-            for doc in documents
-        ]
+        return Chroma(
+            persist_directory=RAGConfig.CHROMA_PERSIST_DIR,
+            collection_name=RAGConfig.COLLECTION_NAME,
+            embedding_function=self.embedding_model,
+        )
 
-        # 3. Add to ChromaDB and log the count of added documents for debugging purposes. 
-        self.vectorstore.add_documents(docs)
-        logger.info(f"Added {len(docs)} documents to ChromaDB")
+    def get_retriever(self, user_id: int, search_filter: Optional[Dict[str, Any]] = None):
+        """MMR retriever over a single user's reviews (diverse, relevant matches)."""
+        return self.vectorstore.as_retriever(
+            search_type="mmr",
+            search_kwargs={
+                "k": RAGConfig.TOP_K,
+                "fetch_k": 20,
+                "lambda_mult": 0.4,  # 0 = more diverse, 1 = more similar
+                "filter": build_where(user_id, search_filter),
+            },
+        )
 
-    # The delete_collection method allows us to delete the entire collection from ChromaDB, which can be useful for resyncing the vector store with new data. 
-    def delete_collection(self):
-        """Delete entire collection (used for resync)"""
-        try:
-            self.vectorstore.delete_collection()
-            self._vectorstore = None
-            logger.info("Deleted existing collection")
-        except Exception as e:
-            logger.warning(f"Failed to delete collection: {e}")
+    def has_documents(self, user_id: int) -> bool:
+        result = self.vectorstore.get(where={"user_id": user_id}, limit=1, include=[])
+        return bool(result and result.get("ids"))
+
+    def count_documents(self, user_id: int) -> int:
+        result = self.vectorstore.get(where={"user_id": user_id}, include=[])
+        return len(result.get("ids", [])) if result else 0
+
+    def delete_user_documents(self, user_id: int) -> None:
+        self.vectorstore._collection.delete(where={"user_id": user_id})
+
+    def upsert_reviews(self, docs: Iterable[Dict[str, Any]], batch_size: int = 256) -> int:
+        """Upsert review dicts with keys: id, text, sentiment, user_id, date (optional)."""
+        documents: List[Document] = []
+        ids: List[str] = []
+        for d in docs:
+            documents.append(Document(
+                page_content=d["text"],
+                metadata={
+                    "user_id": int(d["user_id"]),
+                    "sentiment": float(d["sentiment"]),
+                    "date": str(d.get("date") or ""),
+                },
+            ))
+            ids.append(d["id"])
+
+        for start in range(0, len(documents), batch_size):
+            # Chroma's add is an upsert, so deterministic ids make re-syncing idempotent.
+            self.vectorstore.add_documents(documents[start:start + batch_size], ids=ids[start:start + batch_size])
+        logger.info(f"Upserted {len(documents)} documents into ChromaDB")
+        return len(documents)
+
+
+_manager: Optional[VectorStoreManager] = None
+_manager_lock = threading.Lock()
+
+
+def get_vector_store_manager() -> VectorStoreManager:
+    """Process-wide singleton so the embedding model and Chroma client load only once."""
+    global _manager
+    if _manager is None:
+        with _manager_lock:
+            if _manager is None:
+                _manager = VectorStoreManager()
+    return _manager
